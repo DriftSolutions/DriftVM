@@ -328,17 +328,26 @@ function gettemplate($name) {
 	return "Invalid Template: ".$name;
 }
 
+function std_redirect_reload($cmd, $text="") {
+	global $config;
+	if (empty($text)) { $text = 'You are being redirected to a new page, if you are not automatically forwarded in 5 seconds click here.'; }
+	$url = $config['site_url']."index.php?mod=".urlencode($cmd);
+	$ret = "<center><a href=\"".xssafe($url)."\" target=\"_top\">".xssafe($text)."</a><br /><img src=\"images/redirect.gif\" border=0></center>";
+	$ret .= "<script type=\"text/javascript\">setTimeout('window.open(".json_encode($url).", \"_top\");', 1000);</script>";
+	return $ret;
+}
+
 function std_redirect($cmd, $extra="", $text="") {
 	global $config;
-	if (empty($text)) { $text = __('You are being redirected to a new page, if you are not automatically forwarded in 5 seconds click here.'); }
-	$url = $config['site_url']."index.php?mod=".urlencode($cmd).iif(($extra != ""),"&".$extra,"");
+	if (empty($text)) { $text = 'You are being redirected to a new page, if you are not automatically forwarded in 5 seconds click here.'; }
+	$url = $config['site_url']."module.php?mod=".urlencode($cmd).iif(($extra != ""),"&".$extra,"");
 	$ret = "<center><a href=\"".xssafe($url)."\">".xssafe($text)."</a><br /><img src=\"images/redirect.gif\" border=0></center>";
 	$ret .= "<script type=\"text/javascript\">setTimeout('window.open(".json_encode($url).", \"_self\");', 1000);</script>";
 	return $ret;
 }
 
 function std_redirect_exturl($url, $text="") {
-	if (empty($text)) { $text = __('You are being redirected to a new page, if you are not automatically forwarded in 5 seconds click here.'); }
+	if (empty($text)) { $text = 'You are being redirected to a new page, if you are not automatically forwarded in 5 seconds click here.'; }
 	$ret = "<center><a href=\"".xssafe($url)."\">".xssafe($text)."</a><br /><img src=\"images/redirect.gif\" border=0></center>";
 	$ret .= "<script type=\"text/javascript\">setTimeout('window.open(".json_encode($url).", \"_self\");', 1000);</script>";
 	return $ret;
@@ -373,6 +382,20 @@ function get_random_bytes($size) {
 		$iv .= chr(mt_rand(0,255));
 	}
 	return $iv;
+}
+
+function get_verification_charset() {
+	return 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+}
+
+function get_verification_code($length = 8) {
+	$charset = get_verification_charset();
+	$max = strlen($charset) - 1;
+	$ret = '';
+	for ($i = 0; $i < $length; $i++) {
+		$ret .= $charset[random_int(0, $max)];
+	}
+	return $ret;
 }
 
 function EncryptData($secret, $data, $raw = FALSE) {
@@ -454,17 +477,23 @@ function MakeErrorReport($cat,$str) {
 	return $ret;
 }
 
-function OpenPanel($title='', $class='panel-default') {
-	print '<div class="panel '.$class.'">';
+function OpenPanel($title='', $class='') {
+	/*
+  <div class="card-header">
+    Featured
+  </div>
+  <div class="card-body">
+	*/
+	print '<div class="card">';
 	if (!empty($title)) {
-		print '<div class="panel-heading"><h3 class="panel-title">'.$title.'</h3></div>';
+		print '<h5 class="card-header '.$class.'">'.$title.'</h5>';
 	}
-	print '<div class="panel-body">';
+	print '<div class="card-body">';
 }
 function ClosePanel($footer='') {
 	print '</div>';
 	if (!empty($footer)) {
-		print '<div class="panel-footer">'.$footer.'</div>';
+		print '<div class="card-footer text-muted">'.$footer.'</div>';
 	}
 	print '</div>';
 }
@@ -472,11 +501,11 @@ function ClosePanel($footer='') {
 function ShowMsgBox($title, $content, $extra="") {
 	print '<div class="container">';
 	if (stristr($title, 'Error') !== FALSE || stristr($title, 'Gas Notice') !== FALSE) {
-		$class = 'panel-danger';
+		$class = 'text-bg-danger';
 	} elseif (stristr($title, 'Warning') !== FALSE) {
-		$class = 'panel-warning';
+		$class = 'text-bg-warning';
 	} else {
-		$class = 'panel-primary';
+		$class = 'text-bg-primary';
 	}
 	OpenPanel($title, $class);
 	print $content;

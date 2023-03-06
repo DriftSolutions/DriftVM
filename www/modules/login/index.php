@@ -4,8 +4,8 @@ Part of DriftVM
 License: GPLv3
 Copyright 2023 Drift Solutions
 */
-$pagename = __("Log In");
-$pagedesc = __("Log in to the DriftVM Control Panel");
+$pagename = "Log In";
+$pagedesc = "Log in to the DriftVM Control Panel";
 $pagecan = $config['site_url'].'login';
 require("header.inc.php");
 require_once('./include/passwd.inc.php');
@@ -17,7 +17,7 @@ if ($config['use_hcaptcha'] && !empty($config['hcaptcha_secret']) && !empty($con
 	}
 	$captcha_html = '<script src="https://www.hCaptcha.com/1/api.js" async defer></script><div class="h-captcha" data-sitekey="'.xssafe($config['hcaptcha_sitekey']).'"></div>';
 } else {
-	$captcha_ok = false;
+	$captcha_ok = true;
 	$captcha_html = '';
 }
 
@@ -59,17 +59,10 @@ function complete_login($ui) {
 
 	if (isset($_SESSION['return'])) {
 		$return = $_SESSION['return']['mod'];
-		$rest = "";
-		if ($_SESSION['return']['id'] != '') {
-			$rest = "id=".$_SESSION['return']['id']."&";
-		}
-		if ($_SESSION['return']['reset'] != 0) {
-			$rest = "reset=".$_SESSION['return']['reset']."&";
-		}
 		unset($_SESSION['return']);
-		ShowMsgBox(__("Logged In"), std_redirect($return, $rest));
+		ShowMsgBox("Logged In", std_redirect_reload($return));
 	} else {
-		ShowMsgBox(__("Success"), sprintf(__("Hello %s, welcome back!"), xssafe($_SESSION['userinfo']['Username']))."<br /><br />".std_redirect("acct_dashboard"));
+		ShowMsgBox("Success", sprintf("Hello %s, welcome back!", xssafe($_SESSION['userinfo']['Username']))."<br /><br />".std_redirect_reload("auth_dashboard"));
 	}
 }
 
@@ -79,13 +72,8 @@ if (isset($_REQUEST['return'])) {
 		$return = "";
 	}
 	if (!empty($return)) {
+		$_SESSION['return'] = array();
 		$_SESSION['return']['mod'] = $return;
-		$id = SanitizedRequestStr('id');
-		if (empty($id) || strspn($id,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") != strlen($id)) {
-			$id = my_intval($id);
-		}
-		$_SESSION['return']['id'] = $id;
-		$_SESSION['return']['reset'] = my_intval(SanitizedRequestStr('reset',0));
 	} else {
 		unset($_SESSION['return']);
 	}
@@ -94,17 +82,10 @@ if (isset($_REQUEST['return'])) {
 if (is_user()) {
 	if (isset($_SESSION['return'])) {
 		$return = $_SESSION['return']['mod'];
-		$rest = "";
-		if ($_SESSION['return']['id'] != '') {
-			$rest = "id=".$_SESSION['return']['id']."&";
-		}
-		if ($_SESSION['return']['reset'] != 0) {
-			$rest = "reset=".$_SESSION['return']['reset']."&";
-		}
 		unset($_SESSION['return']);
-		ShowMsgBox(__("Already Logged In"), std_redirect($return, $rest));
+		ShowMsgBox("Already Logged In", std_redirect_reload($return));
 	} else {
-		ShowMsgBox(__("Already Logged In"), __("You are already logged in!"));
+		ShowMsgBox("Already Logged In", "You are already logged in!");
 	}
 	require("footer.inc.php");
 	exit;
@@ -141,9 +122,25 @@ if (isset($_REQUEST['user']) && isset($_REQUEST['pass'])) {
 		/* End Rate Limiting / Account Locking */
 
 		if (!$captcha_ok) {
-			$error_msg = __("Invalid CAPTCHA response, please try again...");
+			$error_msg = "Invalid CAPTCHA response, please try again...";
 		}
 
+		if (empty($error_msg)) {
+			$res = $db->query("SELECT COUNT(*) AS `Count` FROM `Users` LIMIT 1");
+			if (($arr = $db->fetch_assoc($res)) !== FALSE && $arr['Count'] == 0) {
+				$insert = array(
+					'Username' => $username,
+					'Status' => 1,
+					'Joined' => time(),
+				);
+				if ($db->insert('Users', $insert) === TRUE && ($id = $db->insert_id()) > 0) {
+					SetPasswordByID($id, $pass);
+				} else {
+					$error_msg = "Error creating first user!";
+				}
+			}
+			$db->free_result($res);
+		}
 		if (empty($error_msg)) {
 			$res = $db->query("SELECT * FROM `Users` WHERE (`Username`='".$db->escape($username)."' OR `Email`='".$db->escape($username)."') LIMIT 1");
 			$arr = FALSE;
@@ -171,17 +168,18 @@ print '<div class="container">';
 OpenPanel('Log in to your account');
 ?>
 <form action="login" method="POST">
-  <input type="text" placeholder="<?php echo xssafe('Username'); ?>" name="user" value="<?php echo xssafe(SanitizedRequestStr('user')); ?>" required>
-  <input type="password" placeholder="<?php echo xssafe(__('Password')); ?>" name="pass" required>
+  <input class="form-control" type="text" placeholder="<?php echo xssafe('Username'); ?>" name="user" value="<?php echo xssafe(SanitizedRequestStr('user')); ?>" required>
+  <input class="form-control" type="password" placeholder="<?php echo xssafe('Password'); ?>" name="pass" required>
   <?php
+  	echo csrf_get_html('login');
   	if (!empty($captcha_html)) {
 			echo $captcha_html;
 		}
   ?>
-  <input type="submit" value="<?php echo __('Login'); ?>" class="btn btn-primary">
+  <input type="submit" value="<?php echo 'Login'; ?>" class="btn btn-primary">
 </form>
 <?php
 ClosePanel();
-print '</div>'//container
+print '</div>';//container
 
 require("footer.inc.php");

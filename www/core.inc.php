@@ -29,6 +29,7 @@ if (!defined('CORE_INC_PHP')) {
 		http_response_code(503);
 		die("FATAL: Error connecting to database!");
 	}
+	require('./include/csrf.inc.php');
 	require('./include/gridtable.inc.php');
 	require('./include/ratelimiter.inc.php');
 
