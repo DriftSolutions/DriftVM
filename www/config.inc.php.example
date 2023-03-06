@@ -1,0 +1,25 @@
+<?php
+if (!defined('CONFIG_INC_PHP')) {
+	define('CONFIG_INC_PHP','INCLUDED');
+
+	$config['site_url'] = "https://your_driftvm_url/";
+	$config['site_fsroot'] = '/path/to/DriftVM/www/';
+
+	$config['db_host'] = "localhost";
+	$config['db_port'] = 3306;
+	$config['db_user'] = "driftvm"; // your DB username
+	$config['db_pass'] = ''; // your DB password
+	$config['db_database'] = "driftvm"; // your database name
+
+	$config['admin_email'] = "your@email.com";
+
+	$config['use_hcaptcha'] = false; // optionally protect your login page with a captcha
+	$config['hcaptcha_secret'] = '';
+	$config['hcaptcha_sitekey'] = '';
+
+	/* Don't change any of these keys after you have set them !!! Use a good randomly generated string 32+ characters long for these. */
+	$config['pass_enc_key'] = '';
+
+	$config['Debug'] = false;
+
+}
