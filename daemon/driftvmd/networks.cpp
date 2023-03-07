@@ -61,36 +61,41 @@ bool GetNetwork(const string& devname, shared_ptr<Network>& net) {
 			}
 		}
 		sql->FreeResult(res);
+		setError("Not yet implemented");
 		return false;
 	}
 }
 
 bool ActivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
+	setError("Not yet implemented");
 	return true;
 }
 
 bool ActivateNetwork(const string& device) {
 	AutoMutex(wdMutex);
-	auto x = networks.find(device);
-	if (x != networks.end()) {
-		return ActivateNetwork(x->second);
+	shared_ptr<Network> net;
+	if (GetNetwork(device, net)) {
+		return ActivateNetwork(net);
 	}
+	setError("Network with that device not found!");
 	return false;
 }
 
 
 bool DeactivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
+	setError("Not yet implemented");
 	return true;
 }
 
 bool DeactivateNetwork(const string& device) {
 	AutoMutex(wdMutex);
-	auto x = networks.find(device);
-	if (x != networks.end()) {
-		return DeactivateNetwork(x->second);
+	shared_ptr<Network> net;
+	if (GetNetwork(device, net)) {
+		return DeactivateNetwork(net);
 	}
+	setError("Network with that device not found!");
 	return false;
 }
 

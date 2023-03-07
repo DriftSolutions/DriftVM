@@ -5,10 +5,54 @@ License: GPLv3
 Copyright 2023 Drift Solutions
 */
 
+$type = my_intval(SanitizedRequestStr('nettype'));
+
+if (count($_POST)) {
+	if (csrf_verify('network-create')) {
+		$devname = SanitizedRequestStr('device');
+		$addr = SanitizedRequestStr('address');
+		if (is_valid_network_type($type)) {
+			if (!empty($devname)) {
+				if (!array_key_exists($devname, net_get_interfaces())) {
+					if (!empty($addr)) {
+						$ip = '';
+						$mask = 0;
+						$iptmp = parse_ip_mask($addr, $ip, $mask);
+						if ($iptmp !== FALSE) {
+							$insert = [
+								'Device' => $devname,
+								'IP' => $ip,
+								'Netmask' => $mask,
+								'Type' => $type,
+							];
+							if ($db->insert('Networks', $insert) === TRUE) {
+								ShowMsgBox('Success', 'Network created!<br /><br />'.std_redirect_reload('auth_dashboard'));
+								return;
+							} else {
+								ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');
+							}
+						} else {
+							ShowMsgBox('Error', 'That is not a valid subnet IP!');
+						}
+					} else {
+						ShowMsgBox('Error', 'The subnet IP cannot be empty!');
+					}
+				} else {
+					ShowMsgBox('Error', 'The device name is already in use!');
+				}
+			} else {
+				ShowMsgBox('Error', 'The device name cannot be empty!');
+			}
+		} else {
+			ShowMsgBox('Error', 'Invalid network type selected!');
+		}
+	} else {
+		ShowMsgBox('Error', 'CSRF check failed! Please try again...');
+	}
+}
+
 print '<div class="container">';
 OpenPanel('Create Network');
-$type = my_intval(SanitizedRequestStr('address'));
-
 ?>
 <form action="network-create" method="POST">
 	<?php echo csrf_get_html('network-create'); ?>
@@ -43,6 +87,9 @@ $type = my_intval(SanitizedRequestStr('address'));
 			  </label>
 			</div>
 		</div>
+	</div>
+	<div class="mb-3 text-center">
+ 		<button type="submit" class="btn btn-primary mb-3">Create Network</button>
 	</div>
 </form>
 <?php

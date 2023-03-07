@@ -26,6 +26,10 @@ along with JSON-RPC PHP; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+if (!function_exists('curl_init')) {
+	die("ERROR: We need php-curl installed!\n");
+}
+
 /**
  * The object of this class are generic jsonRPC 1.0 clients
  * http://json-rpc.org/wiki/specification
@@ -53,12 +57,6 @@ class jsonRPCClient {
 	 * @var integer
 	 */
 	private $id;
-	/**
-	 * If true, notifications are performed instead of requests
-	 *
-	 * @var boolean
-	 */
-	private $notification = false;
 
 	private $timeout = 300;
 	private $custom_headers = array();
@@ -112,13 +110,15 @@ class jsonRPCClient {
 		}
 
 		// check
-		if (is_array($params)) {
-			// no keys
-			$params = array_values($params);
-		} else {
+		if (!is_array($params)) {
+			throw new Exception('Params must be given as array');
+		}
+		$params = $params[0];
+		if (!is_array($params)) {
 			throw new Exception('Params must be given as array');
 		}
 
+		$currentId = $this->id++;
 		// prepares the request
 		$request = array(
 						'jsonrpc' => '2.0',
@@ -128,7 +128,7 @@ class jsonRPCClient {
 		);
 		$request = json_encode($request, JSON_UNESCAPED_SLASHES);
 		if ($this->debug && php_sapi_name() == "cli") {
-			//print '***** Request *****'."\n".$request."\n".'***** End Of request *****'."\n\n";
+			print '***** Request *****'."\n".$request."\n".'***** End Of request *****'."\n\n";
 		}
 
 		$ch = curl_init();

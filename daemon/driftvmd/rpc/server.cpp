@@ -148,7 +148,7 @@ void rpc_req_handler(struct evhttp_request * evreq, void * ptr) {
 
 	const char * auth = evhttp_find_header(hin, "Authorization");
 	if (auth == NULL || !rpc_check_auth(auth)) {
-		evhttp_add_header(hout, "WWW-Authenticate", "Basic realm=\"walletd RPC\"");
+		evhttp_add_header(hout, "WWW-Authenticate", "Basic realm=\"DriftVM RPC\"");
 		rpc_std_error(evreq, "Invalid username and/or password!", 401);
 		return;
 	}

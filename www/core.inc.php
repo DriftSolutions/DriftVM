@@ -25,6 +25,7 @@ if (!defined('CORE_INC_PHP')) {
 	}
 
 	require('./include/functions.inc.php');
+	require('./include/driftvm.inc.php');
 	require('./include/db.mysqli.inc.php');
 	if (!$db->init($config['db_host'], $config['db_user'], $config['db_pass'], $config['db_database'], $config['db_port'])) {
 		http_response_code(503);
@@ -33,6 +34,7 @@ if (!defined('CORE_INC_PHP')) {
 	require('./include/csrf.inc.php');
 	require('./include/gridtable.inc.php');
 	require('./include/ratelimiter.inc.php');
+	require('./include/jsonRPCClient.php');
 
 	date_default_timezone_set("America/New_York");
 

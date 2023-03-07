@@ -15,7 +15,11 @@ void network_activate(RPC_Request& req) {
 		req.SetError("device is empty!");
 		return;
 	}
-	req.SetReply(ActivateNetwork(devname));
+	if (ActivateNetwork(devname)) {
+		req.SetReply(true);
+	} else {
+		req.SetError(getError());
+	}
 }
 
 void network_deactivate(RPC_Request& req) {
@@ -24,7 +28,11 @@ void network_deactivate(RPC_Request& req) {
 		req.SetError("device is empty!");
 		return;
 	}
-	req.SetReply(DeactivateNetwork(devname));
+	if (DeactivateNetwork(devname)) {
+		req.SetReply(true);
+	} else {
+		req.SetError(getError());
+	}
 }
 
 void network_delete(RPC_Request& req) {
@@ -37,11 +45,16 @@ void network_delete(RPC_Request& req) {
 	if (req.params.exists("deactivate")) {
 		deactivate = req.params["deactivate"].get_bool();
 	}
+	bool ret = true;
 	if (deactivate) {
-		DeactivateNetwork(devname);
+		ret = DeactivateNetwork(devname);
 	}
 	RemoveNetwork(devname);
-	req.SetReply(true);
+	if (ret) {
+		req.SetReply(true);
+	} else {
+		req.SetError(getError());
+	}
 }
 
 const RPC_Command rpc_driftvm_functions[] = {	

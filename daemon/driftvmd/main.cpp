@@ -32,11 +32,11 @@ bool LoadConfig() {
 
 	sstrcpy(config.tmp_dir, "." PATH_SEPS "tmp");
 	sstrcpy(config.rpc.bind_ip, "127.0.0.1");
-	config.rpc.port = 8550;
+	config.rpc.port = 28401;
 
 	Universal_Config2 cfg;
 	if (!cfg.LoadConfigFromFile("driftvmd.conf")) {
-		printf("Error loading walletd.conf!\n");
+		printf("Error loading driftvmd.conf!\n");
 		return false;
 	}
 
