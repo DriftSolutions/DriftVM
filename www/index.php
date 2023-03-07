@@ -64,7 +64,7 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 								<?php
 									$res = $db->query("SELECT `Device` FROM `Networks`");
 									while ($arr = $db->fetch_assoc($res)) {
-										print '<li><a href="network-edit?dev='.xssafe($arr['Device']).'" target="module" class="link-light d-inline-flex text-decoration-none rounded">'.xssafe($arr['Device']).'</a></li>';
+										print '<li><a href="network-view?dev='.xssafe($arr['Device']).'" target="module" class="link-light d-inline-flex text-decoration-none rounded">'.xssafe($arr['Device']).'</a></li>';
 									}
 									$db->free_result($res);
 								?>

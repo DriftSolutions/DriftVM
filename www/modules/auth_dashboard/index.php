@@ -68,7 +68,6 @@ print '<div class="container mt-3">';
 OpenPanel('Active Network Interfaces');
 
 $grid->Open();
-$grid->OpenBody();
 
 $grid->OpenHead();
 $grid->OpenRow();

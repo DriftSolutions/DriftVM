@@ -35,3 +35,20 @@ function parse_ip_mask($str, &$ip, &$mask) {
 	$mask = my_intval($tmp[1]);
 	return true;
 }
+
+function get_network_device($devname) {
+	$networks = net_get_interfaces();
+	if (!isset($networks[$devname]) || !isset($networks[$devname]['unicast'])) {
+		return false;
+	}
+
+	print_r($networks[$devname]);
+
+	foreach ($networks[$devname]['unicast'] as $net) {
+		if (in_array($net['family'], $wanted_families) && !empty($net['address']) && !empty($net['netmask'])) {
+			$addrs[] = xssafe($net['address'].' / '.$net['netmask']);
+		}
+	}
+
+	return FALSE;
+}

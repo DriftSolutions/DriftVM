@@ -39,15 +39,16 @@ if (count($_POST)) {
 					if ($db->update('Networks', $update) === TRUE) {
 						$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
 						try {
-							$tmp = $cli->network_activate(['device' => $arr['Device']]);
-							var_dump($tmp);
-							ShowMsgBox('Success', 'Network updated!<br /><br />');//.std_redirect_reload('auth_dashboard'));
+							if ($arr['NormalStatus'] > 0) {
+								$cli->network_activate(['device' => $arr['Device']]);
+							}
+							ShowMsgBox('Success', 'Network updated!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($arr['Device'])));
 							return;
 						} catch (Exception $e) {
 							ShowMsgBox('Error', 'Error activating network changes: '.xssafe($e->getMessage()));
 						}
 					} else {
-						ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');
+						ShowMsgBox('Error', 'Error updating network! (Is the device name already in use?)');
 					}
 				} else {
 					ShowMsgBox('Error', 'That is not a valid subnet IP!');
@@ -64,7 +65,7 @@ if (count($_POST)) {
 }
 
 print '<div class="container">';
-OpenPanel('Create Network');
+OpenPanel('Update Network');
 ?>
 <form action="network-edit" method="POST">
 	<?php echo csrf_get_html('network-edit'); ?>

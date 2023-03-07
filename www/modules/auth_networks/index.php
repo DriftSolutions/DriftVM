@@ -10,6 +10,7 @@ $action = SanitizedRequestStr('action');
 switch ($action) {
 	case 'create':
 	case 'edit':
+	case 'view':
 		require('./modules/auth_networks/'.$action.'.php');
 		break;
 	default:

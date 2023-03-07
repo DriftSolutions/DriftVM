@@ -514,7 +514,7 @@ function ClosePanel($footer='') {
 }
 
 function ShowMsgBox($title, $content, $extra="") {
-	print '<div class="container">';
+	print '<div class="container mb-3">';
 	if (stristr($title, 'Error') !== FALSE || stristr($title, 'Gas Notice') !== FALSE) {
 		$class = 'text-bg-danger';
 	} elseif (stristr($title, 'Warning') !== FALSE) {
