@@ -42,11 +42,10 @@ function get_network_device($devname) {
 		return false;
 	}
 
-	print_r($networks[$devname]);
-
 	foreach ($networks[$devname]['unicast'] as $net) {
-		if (in_array($net['family'], $wanted_families) && !empty($net['address']) && !empty($net['netmask'])) {
-			$addrs[] = xssafe($net['address'].' / '.$net['netmask']);
+		if ($net['family'] == 2 && !empty($net['address']) && !empty($net['netmask'])) {
+			$ret = $networks[$devname];
+			return array_merge($ret, $net);
 		}
 	}
 

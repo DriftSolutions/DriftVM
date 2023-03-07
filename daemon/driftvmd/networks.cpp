@@ -8,6 +8,10 @@
 //@AUTOHEADER@END@
 
 #include "driftvmd.h"
+#ifndef WIN32
+#include <sys/ioctl.h>
+#include <linux/sockios.h>
+#endif
 
 networkMap networks;
 
@@ -68,19 +72,25 @@ bool GetNetwork(const string& devname, shared_ptr<Network>& net) {
 
 bool ActivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
+	bool ret = true;
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd == -1) {
 		setError("Error opening socket while creating bridge: %s", strerror(errno));
-		return false;
+		goto error_end;
 	}
 #ifndef WIN32
 	int n = ioctl(fd, SIOCBRADDBR, net->device.c_str());
-	if (n < 0) {
-		printf("n: %d, errno: %d\n", n, errno);
+	if (n < 0 && errno != EEXIST) {
+		setError("Error while creating bridge: %s", strerror(errno));
+		goto error_end;
 	}
 #endif
+	goto close_end;
+error_end:
+	ret = false;
+close_end:
 	close(fd);
-	return true;
+	return ret;
 }
 
 bool ActivateNetwork(const string& device) {
@@ -96,8 +106,25 @@ bool ActivateNetwork(const string& device) {
 
 bool DeactivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
-	setError("Not yet implemented");
-	return true;
+	bool ret = true;
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd == -1) {
+		setError("Error opening socket while destroying bridge: %s", strerror(errno));
+		goto error_end;
+	}
+#ifndef WIN32
+	int n = ioctl(fd, SIOCBRDELBR, net->device.c_str());
+	if (n < 0) {
+		setError("Error while destroying bridge: %s", strerror(errno));
+		goto error_end;
+	}
+#endif
+	goto close_end;
+error_end:
+	ret = false;
+close_end:
+	close(fd);
+	return ret;
 }
 
 bool DeactivateNetwork(const string& device) {
