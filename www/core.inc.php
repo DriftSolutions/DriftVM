@@ -7,6 +7,7 @@ Copyright 2023 Drift Solutions
 error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED);
 if (!defined('CORE_INC_PHP')) {
 	define('CORE_INC_PHP','INCLUDED');
+	define('DRIFTVM_VERSION','0.0.1');
 	$config = array();
 	require("config.inc.php");
 

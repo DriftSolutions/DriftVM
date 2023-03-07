@@ -39,7 +39,10 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_23") == st
 			}
 			require($fn);
 		} else {
-			die("ERROR: You must be logged in to access this page!");
+			require("header.inc.php");
+			ShowMsgBox("Error", 'You must be logged in to access this page!<br /><br /><a type="button" class="btn btn-primary" href="index.php?mod=login" target="_top">Log in now...</a>');
+			require("footer.inc.php");
+			exit;
 		}
 	} else if (!strncasecmp($mod, "admin_", 6)) {
 		/* If this is an admin module, make sure they are logged in and an admin. */

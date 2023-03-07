@@ -257,6 +257,21 @@ function duration2($secs, $include_seconds = TRUE) {
 	return rtrim(rtrim($sout), ',');
 }
 
+function bytes($num) {
+	$amounts = array(
+		'TiB' => 1024*1024*1024*1024,
+		'GiB' => 1024*1024*1024,
+		'MiB' => 1024*1024,
+		'KiB' => 1024,
+	);
+	foreach ($amounts as $disp => $amount) {
+		if ($num >= $amount) {
+			return sprintf('%.02f', $num / $amount).' '.$disp;
+		}
+	}
+	return sprintf('%.02f B', $num);
+}
+
 function get_cache_string($key) {
 	return "driftvm_".$key;
 }

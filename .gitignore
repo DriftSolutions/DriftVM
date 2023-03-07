@@ -1,2 +1,8 @@
 www/config.inc.php
 *.bak
+.vs
+Debug
+Release
+Output
+*.sln
+*.vcxproj*

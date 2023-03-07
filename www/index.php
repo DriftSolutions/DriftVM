@@ -28,27 +28,47 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<title>Bootstrap demo</title>
+		<title>DriftVM <?php echo DRIFTVM_VERSION; ?></title>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.2.3/darkly/bootstrap.min.css" integrity="sha512-YRcmztDXzJQCCBk2YUiEAY+r74gu/c9UULMPTeLsAp/Tw5eXiGkYMPC4tc4Kp1jx/V9xjEOCVpBe4r6Lx6n5dA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	</head>
 	<body class="h-100">
 		<div class="d-flex flex-row h-100">
 			<div class="flex-shrink-0 p-3" style="width: 280px;">
 				<a href="/" class="d-flex align-items-center pb-3 mb-3 text-decoration-none border-bottom">
-					<svg class="bi pe-none me-2" width="30" height="24"><use xlink:href="#bootstrap"></use></svg>
-					<span class="fs-5 fw-semibold">DriftVM</span>
+					<div class="d-flex flex-row">
+						<img src="images/logo.png" class="flex-shrink-0 img-responsive pe-2" style="max-height: 50px;" />
+						<div class="flex-grow-1">
+							<span class="fs-5 fw-semibold">DriftVM</span><br />
+							<small>Management System</small>
+						</div>
+					</div>
 				</a>
 				<ul class="list-unstyled ps-0">
 					<?php if (is_user()) { ?>
 					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="false">
+						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#system-collapse" aria-expanded="false">
+							System
+						</button>
+						<div class="collapse" id="system-collapse" style="">
+							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+								<li><a href="dashboard" target="module" class="link-light d-inline-flex text-decoration-none rounded">Dashboard</a></li>
+							</ul>
+						</div>
+					</li>
+					<li class="mb-1">
+						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#networks-collapse" aria-expanded="false">
 							Networks
 						</button>
-						<div class="collapse" id="home-collapse" style="">
+						<div class="collapse" id="networks-collapse" style="">
 							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Overview</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Updates</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Reports</a></li>
+								<?php
+									$res = $db->query("SELECT `Device` FROM `Networks`");
+									while ($arr = $db->fetch_assoc($res)) {
+										print '<li><a href="network-edit?dev='.xssafe($arr['Device']).'" target="module" class="link-light d-inline-flex text-decoration-none rounded">'.xssafe($arr['Device']).'</a></li>';
+									}
+									$db->free_result($res);
+								?>
+								<li><a href="network-create" target="module" class="link-light d-inline-flex text-decoration-none rounded">Create New</a></li>
 							</ul>
 						</div>
 					</li>
@@ -92,7 +112,7 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 							</ul>
 						</div>
 					</li>
-					<li><a href="logout" class="text-decoration-none rounded" style="padding: 0.75rem 0.375rem;" target="module">Log Out</a></li>
+					<li><a href="logout" target="module" class="text-decoration-none rounded" style="padding: 0.75rem 0.375rem;">Log Out</a></li>
 					<?php } else { ?>
 					<li><a href="login" class="text-decoration-none rounded" target="module">Log In</a></li>
 					<?php } /* is_user() */ ?>
