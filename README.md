@@ -8,7 +8,7 @@ These directions were made on Debian 11 but should work for Ubuntu as well. Othe
 
 There are certain dependencies you will need for DriftVM:
 
-apt install apache2 libapache2-mod-php php-cli php-json php-mysqlnd bridge-utils iptables psmisc mariadb-server lm-sensors git
+apt install apache2 libapache2-mod-php php-cli php-json php-mysqlnd bridge-utils iptables psmisc mariadb-server lm-sensors git cmake build-essential libevent-dev libmariadb-dev libmariadb-dev-compat pkg-config
 
 If you want to use LXC containers:
 

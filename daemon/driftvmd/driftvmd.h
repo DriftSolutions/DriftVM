@@ -38,14 +38,14 @@ struct CONFIG_MYSQL {
 	char dbname[128];
 };
 
-class CONFIG {
+struct CONFIG {
 public:
 	bool fShutdown = false;
 #if !defined(WIN32)
 	bool fFork = false;
 #endif
 	FILE * log_fp = NULL;
-	string tmp_dir;
+	char tmp_dir[MAX_PATH];
 
 	CONFIG_MYSQL db;
 	CONFIG_RPC rpc;

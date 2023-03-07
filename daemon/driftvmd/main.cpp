@@ -30,7 +30,7 @@ string GetTempDirFile(string fn) {
 bool LoadConfig() {
 	memset(&config, 0, sizeof(config));
 
-	config.tmp_dir = "." PATH_SEPS "tmp";
+	sstrcpy(config.tmp_dir, "." PATH_SEPS "tmp");
 	sstrcpy(config.rpc.bind_ip, "127.0.0.1");
 	config.rpc.port = 8550;
 
@@ -43,9 +43,9 @@ bool LoadConfig() {
 	ConfigSection * sec = cfg.GetSection(NULL, "Main");
 	if (sec != NULL) {
 		if (cfg.SectionHasValue(sec, "TmpDir")) {
-			config.tmp_dir = cfg.GetSectionValue(sec, "TmpDir").AsString();
-			if (config.tmp_dir.substr(config.tmp_dir.length() - 1) == PATH_SEPS) {
-				config.tmp_dir = config.tmp_dir.substr(0, config.tmp_dir.length() - 1);
+			sstrcpy(config.tmp_dir, cfg.GetSectionValue(sec, "TmpDir").AsString().c_str());
+			if (config.tmp_dir[strlen(config.tmp_dir) - 1] == PATH_SEP) {
+				config.tmp_dir[strlen(config.tmp_dir) - 1] = 0;
 			}
 		}
 #if !defined(WIN32)
@@ -194,10 +194,10 @@ int main(int argc, const char * argv[]) {
 	sigaction(SIGINT, &sa_new, &sa_old);
 #endif
 
-	if (access(config.tmp_dir.c_str(), F_OK) != 0) {
-		dsl_mkdir(config.tmp_dir.c_str(), 0700);
+	if (access(config.tmp_dir, F_OK) != 0) {
+		dsl_mkdir(config.tmp_dir, 0700);
 	}
-	config.tmp_dir += PATH_SEPS;
+	sstrcat(config.tmp_dir, PATH_SEPS);
 
 	config.log_fp = fopen("debug.log", "wb");
 	if (config.log_fp != NULL) {
