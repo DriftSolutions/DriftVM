@@ -19,6 +19,7 @@
 #endif
 
 #include <drift/dsl.h>
+#include <memory>
 #include "util.h"
 #include "rpc/server.h"
 

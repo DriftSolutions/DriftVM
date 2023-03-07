@@ -1,13 +1,13 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.12)
 
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/Output)
-
-project (driftvmd)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 INCLUDE(CheckFunctionExists)
 INCLUDE(CheckCXXCompilerFlag)
 INCLUDE(${CMAKE_ROOT}/Modules/FindPkgConfig.cmake)
+
+project (driftvmd)
+SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/Output)
 
 SET(LIBS pthread z)
 
