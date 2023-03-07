@@ -75,13 +75,13 @@ OpenPanel('Create Network');
 		<label for="address" class="col-sm-2 col-form-label">Network Type</label>
 		<div class="col-sm-10">
 			<div class="form-check">
-			  <input class="form-check-input" type="radio" name="nettype" id="nettype0"<?php echo iif($type == 0,' checked',''); ?>>
+			  <input class="form-check-input" type="radio" name="nettype" value="0" id="nettype0"<?php echo iif($type == 0,' checked',''); ?>>
 			  <label class="form-check-label" for="nettype0">
 			    Routed (can access other networks and the internet)
 			  </label>
 			</div>
 			<div class="form-check">
-			  <input class="form-check-input" type="radio" name="nettype" id="nettype1"<?php echo iif($type == 1,' checked',''); ?>>
+			  <input class="form-check-input" type="radio" name="nettype" value="1" id="nettype1"<?php echo iif($type == 1,' checked',''); ?>>
 			  <label class="form-check-label" for="nettype1">
 			    Isolated (can only access other VMs and containers on the same network)
 			  </label>

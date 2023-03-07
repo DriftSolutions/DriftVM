@@ -98,7 +98,7 @@ foreach ($networks as $dev => $arr) {
 
 	$grid->OpenRow();
 	if (in_array($dev, $devices)) {
-		$grid->TD('<b><a href="network-edit?dev='.xssafe($dev).'">'.xssafe($dev).'</a></b>', 'class="text-center"');
+		$grid->TD('<b><a href="network-view?dev='.xssafe($dev).'">'.xssafe($dev).'</a></b>', 'class="text-center"');
 	} else {
 		$grid->TD('<b>'.xssafe($dev).'</b>', 'class="text-center"');
 	}

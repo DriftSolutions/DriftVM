@@ -44,7 +44,6 @@ if ($sub == 'deactivate' || $sub == 'activate') {
 }
 
 $nd = get_network_device($arr['Device']);
-print_r($nd);
 
 print '<div class="container">';
 OpenPanel('Network Information: '.xssafe($arr['Device']));

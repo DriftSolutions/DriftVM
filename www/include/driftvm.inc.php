@@ -5,6 +5,9 @@ License: GPLv3
 Copyright 2023 Drift Solutions
 */
 
+define('NT_ROUTED', 0);
+define('NT_ISOLATED', 1);
+
 function is_valid_network_type($type) {
 	if ($type < 0 || $type > 1) {
 		return false;
@@ -34,6 +37,22 @@ function parse_ip_mask($str, &$ip, &$mask) {
 	$ip = $tmp[0];
 	$mask = my_intval($tmp[1]);
 	return true;
+}
+
+function get_network_interfaces() {
+	$ret = [];
+	$networks = net_get_interfaces();
+	foreach ($networks as $dev => $arr) {
+		if (!isset($arr['unicast'])) { continue; }
+		foreach ($arr['unicast'] as $net) {
+			if ($net['family'] == 2 && !empty($net['address']) && !empty($net['netmask'])) {
+				unset($arr['unicast']);
+				$ret[$dev] = array_merge($arr, $net);
+				break;
+			}
+		}
+	}
+	return $ret;
 }
 
 function get_network_device($devname) {

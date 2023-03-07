@@ -62,12 +62,37 @@ enum class NetworkTypes {
 };
 
 class Network {
+private:
+	uint8 _netmask_int = 0;
+	string _netmask_str;
 public:
 	int id = 0;
 	string device;
+	bool status = false;
+
 	string address;
-	string netmask;
+	const uint8& netmask_int = _netmask_int;
+	const string& netmask_str = _netmask_str;
 	NetworkTypes type = NetworkTypes::NT_ROUTED;
+	string iface; // the interface to bridge to for routed bridges
+
+	void setNetmask(uint8 mask) {
+		_netmask_int = mask;
+		union {
+			uint8 parts[4];
+			uint32 full;
+		};
+		full = 0;
+		uint32 cur = 0x80000000;
+		for (uint32 i = 0; i < mask; i++) {
+			full |= cur;
+			cur >>= 1;
+		}
+		full = htonl(full);
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%u.%u.%u.%u", parts[0], parts[1], parts[2], parts[3]);
+		_netmask_str = buf;
+	}
 };
 typedef map<string, shared_ptr<Network>> networkMap;
 extern networkMap networks;

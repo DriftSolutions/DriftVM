@@ -15,6 +15,8 @@ void network_activate(RPC_Request& req) {
 		req.SetError("device is empty!");
 		return;
 	}
+	DeactivateNetwork(devname);
+	RemoveNetwork(devname);
 	if (ActivateNetwork(devname)) {
 		req.SetReply(true);
 	} else {
