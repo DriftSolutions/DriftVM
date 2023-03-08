@@ -5,7 +5,7 @@ License: GPLv3
 Copyright 2023 Drift Solutions
 */
 
-print '<div class="container mt-3">';
+print '<div class="container">';
 OpenPanel('Machines');
 
 $grid->Open();
@@ -21,7 +21,12 @@ $grid->CloseHead();
 $grid->OpenBody();
 
 $devices = array();
-$res = $db->query("SELECT `Name`,`Status` FROM `Machines`");
+$net = SanitizedRequestStr('net');
+if (!empty($net)) {
+	$res = $db->query("SELECT `Name`,`Status` FROM `Machines` WHERE `Network`='".$db->escape($net)."'");
+} else {
+	$res = $db->query("SELECT `Name`,`Status` FROM `Machines`");
+}
 while ($arr = $db->fetch_assoc($res)) {
 	$grid->OpenRow();
 	$grid->TD('<b><a href="machine-view?name='.xssafe($arr['Name']).'">'.xssafe($arr['Name']).'</a></b>', 'class="text-center"');

@@ -218,6 +218,7 @@ int main(int argc, const char * argv[]) {
 	}
 
 	LoadNetworksFromDB();
+	LoadMachinesFromDB();
 
 	socks = new DSL_Sockets();
 
@@ -226,7 +227,12 @@ int main(int argc, const char * argv[]) {
 		exit(1);
 	}
 
+	time_t lastUpdate = 0;
 	while (!config.fShutdown) {
+		if (time(NULL) - lastUpdate >= 30) {
+			UpdateMachineStatuses();
+			lastUpdate = time(NULL);
+		}
 		RunJobs();
 		safe_sleep(1);
 	}

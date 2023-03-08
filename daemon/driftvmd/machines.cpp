@@ -85,9 +85,11 @@ bool IsIPInUse(shared_ptr<Network>& net, const string& ip) {
 }
 
 bool UpdateMachineIP(shared_ptr<Machine>& c) {
+	AutoMutex(wdMutex);
 	return sql->NoResultQuery(mprintf("UPDATE `Machines` SET `IP`='%s' WHERE `ID`='%d'", c->address.c_str(), c->id));
 }
 bool UpdateMachineStatus(shared_ptr<Machine>& c) {
+	AutoMutex(wdMutex);
 	return sql->NoResultQuery(mprintf("UPDATE `Machines` SET `Status`='%u',`LastError`='%s' WHERE `ID`='%d'", c->status, sql->EscapeString(getError()).c_str(), c->id));
 }
 
@@ -176,66 +178,34 @@ void RemoveMachines() {
 	machines.clear();
 }
 
-/*
-bool DeactivateNetwork(shared_ptr<Network>& net) {
-	AutoMutex(wdMutex);
-
-	if (!set_if_status(net->device.c_str(), false)) {
-		return false;
+void UpdateMachineStatuses() {
+	machineMap m;
+	{
+		AutoMutex(wdMutex);
+		m = machines;
 	}
 
-	firewall_del_rules(net);
+	set< MachineStatus> skip = { MachineStatus::MS_CREATING, MachineStatus::MS_DELETING, MachineStatus::MS_ERROR_CREATING, MachineStatus::MS_UPDATING };
 
-	int n = 0;
-	bool ret = true;
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd == -1) {
-		setError("Error opening socket while destroying bridge: %s", strerror(errno));
-		goto error_end;
-	}
-	n = ioctl(fd, SIOCBRDELBR, net->device.c_str());
-	if (n < 0) {
-		setError("Error while destroying bridge: %s", strerror(errno));
-		goto error_end;
-	}
-	goto close_end;
-error_end:
-	ret = false;
-close_end:
-	close(fd);
-	return ret;
-}
-
-bool ActivateNetwork(const string& device) {
-	AutoMutex(wdMutex);
-	shared_ptr<Network> net;
-	if (GetNetwork(device, net)) {
-		return ActivateNetwork(net);
-	}
-	setError("Network with that device not found!");
-	return false;
-}
-
-bool DeactivateNetwork(const string& device) {
-	AutoMutex(wdMutex);
-	shared_ptr<Network> net;
-	if (GetNetwork(device, net)) {
-		return DeactivateNetwork(net);
-	}
-	setError("Network with that device not found!");
-	return false;
-}
-
-void RemoveNetwork(const string& device) {
-	AutoMutex(wdMutex);
-	auto x = networks.find(device);
-	if (x != networks.end()) {
-		networks.erase(x);
+	for (auto& c : m) {
+		if (IsJobQueued(c.second->name)) {
+			continue;
+		}
+		unique_ptr<MachineDriver> d;
+		if (GetMachineDriver(c.second, d)) {
+			if (d->IsSpecialStatus()) {
+				continue;
+			}
+			bool suc = false;
+			MachineStatus s = d->GetStatus(&suc);
+			if (suc) {
+				if (s != c.second->status) {
+					AutoMutex(wdMutex);
+					printf("Machine %s is in state %u, updating...\n", c.second->name.c_str(), s);
+					c.second->status = s;
+					UpdateMachineStatus(c.second);
+				}
+			}
+		}
 	}
 }
-
-void RemoveNetworks() {
-	AutoMutex(wdMutex);
-	networks.clear();
-}
-*/

@@ -8,7 +8,7 @@
 //@AUTOHEADER@END@
 
 #include "driftvmd.h"
-#include <queue>
+#include <list>
 
 class MachineJob {
 public:
@@ -17,7 +17,8 @@ public:
 
 
 };
-queue<MachineJob> jobs;
+/* Need to be able to iterate, so list instead of queue */
+list<MachineJob> jobs;
 
 void QueueMachineJob(MachineStatus func, const string& name) {
 	MachineJob j;
@@ -25,7 +26,21 @@ void QueueMachineJob(MachineStatus func, const string& name) {
 	j.name = name;
 
 	AutoMutex(wdMutex);
-	jobs.push(j);
+	jobs.push_back(j);
+}
+
+string current_job_machine;
+bool IsJobQueued(const string& name) {
+	AutoMutex(wdMutex);
+	if (name == current_job_machine) {
+		return true;
+	}
+	for (auto x = jobs.begin(); x != jobs.end(); x++) {
+		if (x->name == name) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void RunJob(const MachineJob& j) {
@@ -94,9 +109,11 @@ void RunJob(const MachineJob& j) {
 void RunJobs() {
 	while (1) {
 		wdMutex.Lock();
+		current_job_machine.clear();
 		if (jobs.size()) {
 			auto j = jobs.front();
-			jobs.pop();
+			current_job_machine = j.name;
+			jobs.erase(jobs.begin());
 			wdMutex.Release();
 			RunJob(j);
 		} else {
@@ -105,4 +122,3 @@ void RunJobs() {
 		}
 	}
 }
-//bool CreateMachine(shared_ptr<Machine>& c)

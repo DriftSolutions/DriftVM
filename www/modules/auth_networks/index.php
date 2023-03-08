@@ -14,7 +14,7 @@ switch ($action) {
 		require('./modules/auth_networks/'.$action.'.php');
 		break;
 	default:
-		ShowMsgBox('Error', 'Unknown action specified!');
+		require('./modules/auth_networks/list.php');
 		break;
 }
 

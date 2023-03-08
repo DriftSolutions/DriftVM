@@ -185,9 +185,19 @@ public:
 	virtual ~MachineDriver() {};
 
 	virtual bool Create() = 0;
+	virtual MachineStatus GetStatus(bool * success = NULL) = 0;
 	virtual bool Start() = 0;
 	virtual bool Stop() = 0;
 	virtual bool Delete() = 0;
+
+	virtual bool IsNormalStatus() {
+		static set<MachineStatus> skip = { MachineStatus::MS_RUNNING, MachineStatus::MS_STARTING, MachineStatus::MS_STOPPING, MachineStatus::MS_STOPPED };
+		return (skip.find(c->status) != skip.end());
+	}
+	virtual bool IsSpecialStatus() {
+		static set<MachineStatus> skip = { MachineStatus::MS_CREATING, MachineStatus::MS_DELETING, MachineStatus::MS_ERROR_CREATING, MachineStatus::MS_UPDATING };
+		return (skip.find(c->status) != skip.end());
+	}
 };
 
 extern const string GUID_LXC;
@@ -196,6 +206,7 @@ bool GetMachineDriver(/* in */ shared_ptr<Machine>& c, /* out */ unique_ptr<Mach
 
 /* Machine functions */
 bool LoadMachinesFromDB();
+void UpdateMachineStatuses();
 bool GetMachine(const string& devname, shared_ptr<Machine>& net, bool use_cache = true);
 bool IsIPInUse(shared_ptr<Network>& net, const string& ip);
 
@@ -208,6 +219,7 @@ void RemoveMachine(const string& name);
 void RemoveMachines();
 
 void QueueMachineJob(MachineStatus func, const string& name);
+bool IsJobQueued(const string& name);
 void RunJobs();
 
 bool firewall_init();
