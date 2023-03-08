@@ -32,94 +32,59 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.2.3/darkly/bootstrap.min.css" integrity="sha512-YRcmztDXzJQCCBk2YUiEAY+r74gu/c9UULMPTeLsAp/Tw5eXiGkYMPC4tc4Kp1jx/V9xjEOCVpBe4r6Lx6n5dA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	</head>
 	<body class="h-100">
-		<div class="d-flex flex-row h-100">
-			<div class="flex-shrink-0 p-3" style="width: 280px;">
-				<a href="/" class="d-flex align-items-center pb-3 mb-3 text-decoration-none border-bottom">
-					<div class="d-flex flex-row">
-						<img src="images/logo.png" class="flex-shrink-0 img-responsive pe-2" style="max-height: 50px;" />
-						<div class="flex-grow-1">
-							<span class="fs-5 fw-semibold">DriftVM</span><br />
-							<small>Management System</small>
+		<div class="d-flex flex-column h-100">
+			<div class="flex-grow-1 d-flex flex-row h-100">
+				<div class="flex-shrink-0 p-3" style="width: 280px;">
+					<a href="/" class="d-flex align-items-center pb-3 mb-3 text-decoration-none border-bottom">
+						<div class="d-flex flex-row">
+							<img src="images/logo.png" class="flex-shrink-0 img-responsive pe-2" style="max-height: 50px;" />
+							<div class="flex-grow-1">
+								<span class="fs-5 fw-semibold">DriftVM</span><br />
+								<small>Management System</small>
+							</div>
 						</div>
-					</div>
-				</a>
-				<ul class="list-unstyled ps-0">
+					</a>
+
 					<?php if (is_user()) { ?>
-					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#system-collapse" aria-expanded="false">
-							System
-						</button>
-						<div class="collapse" id="system-collapse" style="">
-							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<li><a href="dashboard" target="module" class="link-light d-inline-flex text-decoration-none rounded">Dashboard</a></li>
-							</ul>
-						</div>
-					</li>
-					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#networks-collapse" aria-expanded="false">
-							Networks
-						</button>
-						<div class="collapse" id="networks-collapse" style="">
-							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<?php
-									$res = $db->query("SELECT `Device` FROM `Networks`");
-									while ($arr = $db->fetch_assoc($res)) {
-										print '<li><a href="network-view?dev='.xssafe($arr['Device']).'" target="module" class="link-light d-inline-flex text-decoration-none rounded">'.xssafe($arr['Device']).'</a></li>';
-									}
-									$db->free_result($res);
-								?>
-								<li><a href="network-create" target="module" class="link-light d-inline-flex text-decoration-none rounded">Create New</a></li>
-							</ul>
-						</div>
-					</li>
-					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-expanded="false">
-							VM/Containers
-						</button>
-						<div class="collapse" id="dashboard-collapse">
-							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Overview</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Weekly</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Monthly</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Annually</a></li>
-							</ul>
-						</div>
-					</li>
-					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#orders-collapse" aria-expanded="false">
-							Orders
-						</button>
-						<div class="collapse" id="orders-collapse">
-							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">New</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Processed</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Shipped</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Returned</a></li>
-							</ul>
-						</div>
-					</li>
-					<li class="border-top my-3"></li>
-					<li class="mb-1">
-						<button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
-							Account
-						</button>
-						<div class="collapse" id="account-collapse">
-							<ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">New...</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Profile</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Settings</a></li>
-								<li><a href="#" class="link-dark d-inline-flex text-decoration-none rounded">Sign out</a></li>
-							</ul>
-						</div>
-					</li>
-					<li><a href="logout" target="module" class="text-decoration-none rounded" style="padding: 0.75rem 0.375rem;">Log Out</a></li>
+
+					<h5>System</h5>
+					<ul class="list-unstyled ps-0">
+						<li><a href="dashboard" target="module" class="link-light d-inline-flex text-decoration-none rounded">Dashboard</a></li>
+						<li><a href="settings" target="module" class="link-light d-inline-flex text-decoration-none rounded">Settings</a></li>
+					</ul>
+					<h5>Networks</h5>
+					<ul class="list-unstyled ps-0">
+						<li><a href="networks" target="module" class="link-light d-inline-flex text-decoration-none rounded">Networks</a></li>
+						<li><a href="network-create" target="module" class="link-light d-inline-flex text-decoration-none rounded">Create New</a></li>
+					</ul>
+					<h5>Machines</h5>
+					<ul class="list-unstyled ps-0">
+						<li><a href="machines" target="module" class="link-light d-inline-flex text-decoration-none rounded">Machines</a></li>
+						<?php
+							foreach (GetMachineDrivers() as $d) {
+									print '<li><a href="machine-create?guid='.xssafe($d->guid).'" target="module" class="link-light d-inline-flex text-decoration-none rounded">'.xssafe('Create '.$d->GetMachineType(false)).'</a></li>';
+							}
+						?>
+					</ul>
+					<hr />
+					<ul class="list-unstyled ps-0">
+						<li><a href="logout" target="module" class="text-decoration-none rounded" style="padding: 0.75rem 0.375rem;">Log Out</a></li>
+					</ul>
+
 					<?php } else { ?>
-					<li><a href="login" class="text-decoration-none rounded" target="module">Log In</a></li>
+					<ul class="list-unstyled ps-0">
+						<li><a href="login" class="text-decoration-none rounded" target="module">Log In</a></li>
+					</ul>
 					<?php } /* is_user() */ ?>
-				</ul>
+
+				</div>
+				<iframe class="flex-grow-1 h-100" name="module" id="module"></iframe>
+			</div><!-- /flex-row -->
+			<div class="container flex-shrink-0 text-center">
+				Copyright 2023 Drift Solutions. All Rights Reserved.<br />
+				DriftVM is licensed under the <a href="https://github.com/DriftSolutions/DriftVM/blob/main/LICENSE" target="_blank">GNU General Public License v3.0</a> or any later version.
 			</div>
-			<iframe class="flex-grow-1 h-100" name="module" id="module"></iframe>
-		</div><!-- /flex-row -->
+		</div>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 <?php
 	$url = 'module.php?mod='.xssafe($mod);

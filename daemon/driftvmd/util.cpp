@@ -31,3 +31,17 @@ int GetNumCPUs() {
 	return sysconf(_SC_NPROCESSORS_CONF);
 #endif
 }
+
+string escapeshellarg(const string& str) {
+    size_t len = str.length();
+    const char * p = str.c_str();
+    string ret = "'";
+    for (size_t i=0; i < len; i++, p++) {
+        if (*p == '\'' || *p == '\\') {
+            ret += '\\';
+        }
+        ret += *p;
+    }
+	ret += "'";
+    return ret;
+}

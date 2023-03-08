@@ -11,7 +11,6 @@
 #define __DRIFTVMD_RPC_SERVER__
 
 #include "../driftvmd.h"
-#include <univalue.h>
 #include <initializer_list>
 
 bool RPC_Init();

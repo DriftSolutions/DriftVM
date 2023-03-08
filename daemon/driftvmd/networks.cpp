@@ -17,6 +17,8 @@
 
 networkMap networks;
 
+const char * charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+
 inline bool _loadFromRow(const SC_Row& row, Network * n) {
 	n->id = atoi(row.Get("ID").c_str());
 	n->device = row.Get("Device");
@@ -24,7 +26,7 @@ inline bool _loadFromRow(const SC_Row& row, Network * n) {
 	n->setNetmask(atoi(row.Get("Netmask").c_str()));
 	n->type = (NetworkTypes)atoi(row.Get("Type").c_str());
 	n->iface = row.Get("Interface");
-	if (n->id > 0 && n->device.length() && n->address.length() && n->netmask_str.length()) {
+	if (n->id > 0 && n->device.length() && n->address.length() && n->netmask_str.length() && strspn(n->device.c_str(), charset) == n->device.length()) {
 		return true;
 	}
 	return false;
@@ -68,10 +70,12 @@ bool GetNetwork(const string& devname, shared_ptr<Network>& net) {
 			}
 		}
 		sql->FreeResult(res);
-		setError("Not yet implemented");
+		setError("Could not find a network with that name!");
 		return false;
 	}
 }
+
+#ifndef WIN32
 
 class NetworkInterface {
 public:
@@ -210,10 +214,12 @@ bool ActivateNetwork(shared_ptr<Network>& net) {
 
 	/* If routed, add the interface */
 	if (net->type == NetworkTypes::NT_ROUTED) {
+		/*
 		if (net->iface.length() == 0) {
 			setError("Bridge type is routed but no interface set!");
 			goto error_end;
 		}
+		*/
 
 		/* There isn't a way to remove all interfaces, so we're gonna have to check them all */
 		/*
@@ -250,25 +256,19 @@ bool ActivateNetwork(shared_ptr<Network>& net) {
 	if (!set_if_status(net->device.c_str(), true)) {
 		goto error_end;
 	}
+	if (!firewall_add_rules(net)) {
+		setError("Error applying firewall rules!");
+		goto error_end;
+	}
 	goto close_end;
 error_end:
 	ret = false;
+	DeactivateNetwork(net);
 close_end:
 	close(fd);
 	net->status = ret;
 	return ret;
 }
-
-bool ActivateNetwork(const string& device) {
-	AutoMutex(wdMutex);
-	shared_ptr<Network> net;
-	if (GetNetwork(device, net)) {
-		return ActivateNetwork(net);
-	}
-	setError("Network with that device not found!");
-	return false;
-}
-
 
 bool DeactivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
@@ -276,6 +276,8 @@ bool DeactivateNetwork(shared_ptr<Network>& net) {
 	if (!set_if_status(net->device.c_str(), false)) {
 		return false;
 	}
+
+	firewall_del_rules(net);
 
 	int n = 0;
 	bool ret = true;
@@ -295,6 +297,23 @@ error_end:
 close_end:
 	close(fd);
 	return ret;
+}
+
+#else
+
+bool ActivateNetwork(shared_ptr<Network>& net) { return true; }
+bool DeactivateNetwork(shared_ptr<Network>& net) { return true; }
+
+#endif
+
+bool ActivateNetwork(const string& device) {
+	AutoMutex(wdMutex);
+	shared_ptr<Network> net;
+	if (GetNetwork(device, net)) {
+		return ActivateNetwork(net);
+	}
+	setError("Network with that device not found!");
+	return false;
 }
 
 bool DeactivateNetwork(const string& device) {

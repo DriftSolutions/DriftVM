@@ -56,8 +56,9 @@ function complete_login($ui) {
 		send_email($ui['Email'], 'DriftVM Login Notice', $tpl);
 	}
 */
-
-	if (isset($_SESSION['return'])) {
+	if (!HaveSettings()) {
+		ShowMsgBox("Logged In", std_redirect_reload('auth_settings'));
+	} else if (isset($_SESSION['return'])) {
 		$return = $_SESSION['return']['mod'];
 		unset($_SESSION['return']);
 		ShowMsgBox("Logged In", std_redirect_reload($return));

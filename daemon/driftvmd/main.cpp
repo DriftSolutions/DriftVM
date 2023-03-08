@@ -138,6 +138,8 @@ static void catch_sigusr1(int signo) {
 
 void our_cleanup() {
 	AutoMutex(wdMutex);
+	RemoveMachines();
+	RemoveNetworks();
 	if (sql != NULL) {
 		delete sql;
 		sql = NULL;
@@ -146,7 +148,6 @@ void our_cleanup() {
 		delete socks;
 		socks = NULL;
 	}
-	RemoveNetworks();
 	if (config.log_fp != NULL) {
 		fclose(config.log_fp);
 		config.log_fp = NULL;
@@ -205,6 +206,10 @@ int main(int argc, const char * argv[]) {
 		setbuf(config.log_fp, NULL);
 	}
 
+	if (!firewall_init()) {
+		exit(1);
+	}
+
 	atexit(our_cleanup);
 	sql = new DB_MySQL;
 	if (!sql->Connect(config.db.host, config.db.user, config.db.pass, config.db.dbname, config.db.port, "utf8")) {
@@ -222,6 +227,7 @@ int main(int argc, const char * argv[]) {
 	}
 
 	while (!config.fShutdown) {
+		RunJobs();
 		safe_sleep(1);
 	}
 

@@ -26,7 +26,7 @@ if (count($_POST)) {
 								'Type' => $type,
 							];
 							if ($db->insert('Networks', $insert) === TRUE) {
-								ShowMsgBox('Success', 'Network created!<br /><br />'.std_redirect_reload('auth_dashboard'));
+								ShowMsgBox('Success', 'Network created!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($devname)));
 								return;
 							} else {
 								ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');

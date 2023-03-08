@@ -54,15 +54,58 @@ if (empty($host)) {
 	$host = 'Unknown';
 }
 AddInfoLine('Host (IP)', xssafe($host.' ('.gethostbyname($host).')'), 'DriftVM Version', DRIFTVM_VERSION);
-AddInfoLine('Operating System', xssafe(GetOSVersion()), 'Kernel/Arch', xssafe(php_uname('s').' '.php_uname('r').' '.php_uname('m')));
+
+$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+try {
+	$tmp = $cli->getinfo(array());
+	$str = 'Connected, v'.xssafe($tmp['version']);
+} catch (Exception $e) {
+	$str= 'Error: '.xssafe($e->getMessage());
+}
 $uptime = trim(shell_exec('uptime -p'));
-AddInfoLine('System Uptime', xssafe($uptime), 'Memory', xssafe(bytes($mi['ram']['total']).' total, '.bytes($mi['ram']['free']).' free, '.bytes($mi['ram']['cached']).' cached'));
+AddInfoLine('System Uptime', xssafe($uptime), 'driftvmd', $str);
+
+AddInfoLine('Operating System', xssafe(GetOSVersion()), 'Kernel/Arch', xssafe(php_uname('s').' '.php_uname('r').' '.php_uname('m')));
+
+$tmp = GetDiskInfo();
+$str = '';
+$nl = "\n";
+foreach ($tmp as $d) {
+	$str2  = 'Device: '.$d['device'].$nl;
+	$str2 .= 'Available: '.bytes($d['avail']).$nl;
+	$str2 .= 'FS: '.$d['fstype'];
+	$str .= '<span title="'.xssafe($str2).'">'.xssafe($d['mountpoint'].': '.bytes($d['used']).' used of '.bytes($d['size'])).'</span><br />';
+}
+//$str .= nl2br(print_r($tmp, TRUE));
+AddInfoLine('Memory', xssafe(bytes($mi['ram']['total']).' total, '.bytes($mi['ram']['free']).' free, '.bytes($mi['ram']['cached']).' cached'), 'Disk Space', $str);
 
 $grid->CloseBody();
 $grid->Close();
 
 ClosePanel();
 print '</div>';//container
+
+$res = $db->query("SELECT `Status`,COUNT(*) AS `Count` FROM `Machines` GROUP BY `Status` ORDER BY `Status` DESC");
+if ($db->num_rows($res) > 0) {
+
+	print '<div class="container mt-3">';
+	OpenPanel('Machines');
+
+	$parts = [];
+	$total = 0;
+	while ($arr = $db->fetch_assoc($res)) {
+		$parts[] = xssafe(number_format($arr['Count']).' '.GetMachineStatusString($arr));
+		$total += $arr['Count'];
+	}
+	if ($total > 5) {
+		$parts[] = xssafe(number_format($total).' in total.');
+	}
+	echo implode(', ', $parts);
+
+	ClosePanel();
+	print '</div>';//container
+}
+$db->free_result($res);
 
 print '<div class="container mt-3">';
 OpenPanel('Active Network Interfaces');
@@ -87,6 +130,7 @@ while ($arr = $db->fetch_assoc($res)) {
 $db->free_result($res);
 $networks = net_get_interfaces();
 $wanted_families = [2,10]; // 2 = IPv4, 10 = IPv6
+$count = 0;
 foreach ($networks as $dev => $arr) {
 	if (!isset($arr['unicast'])) { continue; }
 	$addrs = [];
@@ -104,6 +148,13 @@ foreach ($networks as $dev => $arr) {
 	}
 	$grid->TD(implode('<br />', $addrs));
 	$grid->TD(iif($arr['up'], 'UP', 'DOWN'));
+	$grid->CloseRow();
+	$count++;
+}
+
+if ($count == 0) {
+	$grid->OpenRow();
+	$grid->TD('- No Interfaces Found -', 'class="text-center" colspan=3');
 	$grid->CloseRow();
 }
 

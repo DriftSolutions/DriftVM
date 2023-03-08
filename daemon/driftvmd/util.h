@@ -13,3 +13,4 @@ void setError(const char * fmt, ...);
 string getError();
 
 int GetNumCPUs();
+string escapeshellarg(const string& str);
