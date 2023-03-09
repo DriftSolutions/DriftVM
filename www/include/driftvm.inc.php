@@ -19,6 +19,9 @@ define('MS_STOPPING', 5);
 define('MS_DELETING', 6);
 define('MS_RUNNING', 100);
 
+define('GUID_LXC', '{46634A47-CB89-4318-B98D-A691138C256B}');
+define('GUID_KVM', '{2E9F6C5A-34AE-4456-8CDF-EA5F0805A4B7}');
+
 function GetMachineStatusString($arr) {
 	switch ($arr['Status']) {
 		case MS_STOPPED:
@@ -58,6 +61,18 @@ function IsOurNetwork($device) {
 	return ($arr['Count'] > 0);
 }
 
+function GetNetwork($device) {
+	global $db;
+	if (empty($device)) { return false; }
+	$res = $db->query("SELECT * FROM `Networks` WHERE `Device`='".$db->escape($device)."'");
+	if ($arr = $db->fetch_assoc($res)) {
+		$db->free_result($res);
+		return $arr;
+	}
+	$db->free_result($res);
+	return false;
+}
+
 function is_ip($str) {
 	if (empty($str)) { return false; }
 	return filter_var($str, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? true:false;
@@ -85,6 +100,7 @@ function parse_ip_mask($str, &$ip, &$mask) {
 function get_network_interfaces() {
 	$ret = [];
 	$networks = net_get_interfaces();
+	ksort($networks);
 	foreach ($networks as $dev => $arr) {
 		if (!isset($arr['unicast'])) { continue; }
 		foreach ($arr['unicast'] as $net) {
@@ -101,7 +117,7 @@ function get_network_interfaces() {
 function get_network_device($devname) {
 	$networks = net_get_interfaces();
 	if (!isset($networks[$devname]) || !isset($networks[$devname]['unicast'])) {
-		return false;
+		return FALSE;
 	}
 
 	foreach ($networks[$devname]['unicast'] as $net) {
@@ -272,4 +288,41 @@ function RenderOptions($opts) {
 		$ret .= '</div></div>';
 	}
 	return $ret;
+}
+
+function HaveExecutable($fn) {
+	$key = 'have_executable_'.sha1($fn);
+	$ret = cache1_get($key);
+	if ($ret !== FALSE) {
+		return $ret;
+	}
+
+	$ret = -1;
+	if (system("which ".escapeshellarg($fn).' 1>/dev/null 2>/dev/null', $ret) !== FALSE && $ret == 0) {
+		cache1_store($key, true, 3600);
+		return true;
+	}
+
+	$search = ['/bin/','/usr/bin/','/usr/local/bin/','/sbin/','/usr/sbin/','/usr/local/sbin/'];
+	foreach ($search as $dir) {
+		$ffn = $dir.$fn;
+		if (@file_exists($ffn) === TRUE) {
+			cache1_store($key, true, 3600);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+if (!function_exists('openssl_encrypt')) {
+	die("ERROR: We need the php-openssl extension!\n");
+}
+
+function encrypt_vnc_pass($pass) {
+	// Zero pad the password
+	$len = ceil(strlen($pass)/8) * 8;
+	$pass = str_pad($pass, $len, "\x00");
+
+	return bin2hex(openssl_encrypt($pass, 'des-ecb', hex2bin('e84ad660c4721ae0'), OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING));
 }

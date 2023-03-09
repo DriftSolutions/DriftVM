@@ -37,6 +37,43 @@ void network_deactivate(RPC_Request& req) {
 	}
 }
 
+void network_firewall_apply(RPC_Request& req) {
+	string devname = req.params["device"].get_str();
+	if (devname.length() == 0) {
+		req.SetError("device is empty!");
+		return;
+	}
+	shared_ptr<Network> net;
+	if (!GetNetwork(devname, net, false)) {
+		req.SetError(getError());
+		return;
+	}
+	firewall_flush_rules(net);
+	if (firewall_add_rules(net)) {
+		req.SetReply(true);
+	} else {
+		req.SetError(getError());
+	}
+}
+
+void network_firewall_flush(RPC_Request& req) {
+	string devname = req.params["device"].get_str();
+	if (devname.length() == 0) {
+		req.SetError("device is empty!");
+		return;
+	}
+	shared_ptr<Network> net;
+	if (!GetNetwork(devname, net, false)) {
+		req.SetError(getError());
+		return;
+	}
+	if (firewall_flush_rules(net)) {
+		req.SetReply(true);
+	} else {
+		req.SetError(getError());
+	}
+}
+
 void network_delete(RPC_Request& req) {
 	string devname = req.params["device"].get_str();
 	if (devname.length() == 0) {
@@ -149,6 +186,9 @@ const RPC_Command rpc_driftvm_functions[] = {
 	{ "network", "network_activate", &network_activate, { { "device", UniValue::VSTR, true } }, "Activate a network" },
 	{ "network", "network_deactivate", &network_deactivate, { { "device", UniValue::VSTR, true } }, "Deactivate a network" },
 	{ "network", "network_delete", &network_delete, { { "device", UniValue::VSTR, true }, { "deactivate", UniValue::VSTR, false } }, "Delete (and optionally deactivate first) a network" },
+	{ "network", "network_firewall_apply", &network_firewall_apply, { { "device", UniValue::VSTR, true } }, "Apply firewall rules for a network" },
+	{ "network", "network_firewall_flush", &network_firewall_flush, { { "device", UniValue::VSTR, true } }, "Flush firewall rules for a network" },
+
 
 	{ "machines", "machine_create", &machine_create, { { "name", UniValue::VSTR, true } }, "Create a new machine" },
 	{ "machines", "machine_start", &machine_start, { { "name", UniValue::VSTR, true } }, "Start a machine" },

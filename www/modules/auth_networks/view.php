@@ -41,12 +41,28 @@ if ($sub == 'deactivate' || $sub == 'activate') {
 	} else {
 		ShowMsgBox('Error', 'Error updating network! (Is the device name already in use?)');
 	}
+} else if ($sub == 'firewall_apply') {
+	$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+	try {
+		$cli->network_firewall_apply(['device' => $arr['Device']]);
+		ShowMsgBox('Success', 'Firewall rules applied!');
+	} catch (Exception $e) {
+		ShowMsgBox('Error', 'Error activating network changes: '.xssafe($e->getMessage()));
+	}
+} else if ($sub == 'firewall_flush') {
+	$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+	try {
+		$cli->network_firewall_flush(['device' => $arr['Device']]);
+		ShowMsgBox('Success', 'Firewall rules flushed!');
+	} catch (Exception $e) {
+		ShowMsgBox('Error', 'Error activating network changes: '.xssafe($e->getMessage()));
+	}
 }
 
 $nd = get_network_device($arr['Device']);
 
 print '<div class="container">';
-OpenPanel('Network Information: '.xssafe($arr['Device']));
+OpenPanel('Network Information: '.xssafe($arr['Device']).' [<a href="network-view?dev='.xssafe($arr['Device']).'">Refresh</a>]');
 
 $grid->Open();
 $grid->OpenBody();
@@ -76,6 +92,8 @@ if ($up) {
 } else {
 	$str .= ' <a type="button" class="btn btn-success" href="network-view?dev='.xssafe($arr['Device']).'&sub=activate">Activate</a>';
 }
+$str .= ' <a type="button" class="btn btn-success" href="network-view?dev='.xssafe($arr['Device']).'&sub=firewall_apply">Apply Firewall Rules</a>';
+$str .= ' <a type="button" class="btn btn-danger" href="network-view?dev='.xssafe($arr['Device']).'&sub=firewall_flush">Flush Firewall Rules</a>';
 $grid->TD($str);
 $grid->CloseRow();
 

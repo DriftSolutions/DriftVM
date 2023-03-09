@@ -6,6 +6,8 @@ Copyright 2023 Drift Solutions
 */
 
 $type = my_intval(SanitizedRequestStr('nettype'));
+$iface = SanitizedRequestStr('iface', GetSetting('default_listen_iface'));
+
 
 if (count($_POST)) {
 	if (csrf_verify('network-create')) {
@@ -19,17 +21,22 @@ if (count($_POST)) {
 						$mask = 0;
 						$iptmp = parse_ip_mask($addr, $ip, $mask);
 						if ($iptmp !== FALSE) {
-							$insert = [
-								'Device' => $devname,
-								'IP' => $ip,
-								'Netmask' => $mask,
-								'Type' => $type,
-							];
-							if ($db->insert('Networks', $insert) === TRUE) {
-								ShowMsgBox('Success', 'Network created!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($devname)));
-								return;
+							if (get_network_device($iface) !== FALSE) {
+								$insert = [
+									'Device' => $devname,
+									'IP' => $ip,
+									'Netmask' => $mask,
+									'Type' => $type,
+									'Interface' => $iface,
+								];
+								if ($db->insert('Networks', $insert) === TRUE) {
+									ShowMsgBox('Success', 'Network created!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($devname)));
+									return;
+								} else {
+									ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');
+								}
 							} else {
-								ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');
+								ShowMsgBox('Error', 'Invalid listening interface selected!');
 							}
 						} else {
 							ShowMsgBox('Error', 'That is not a valid subnet IP!');
@@ -88,6 +95,20 @@ OpenPanel('Create Network');
 			</div>
 		</div>
 	</div>
+	<div class="mb-3 row">
+		<label for="iface" class="col-sm-2 col-form-label">Listening Interface</label>
+		<div class="col-sm-10">
+			<select class="form-control" id="iface" name="iface">
+			<?php
+				$networks = get_network_interfaces();
+				foreach ($networks as $dev => $arr) {
+					print '<option value="'.xssafe($dev).'"'.iif($dev == $iface,' selected','').'>'.xssafe($dev.' ('.$arr['address'].')').'</option>';
+				}
+			?>
+			</select>
+			Interface to listen for port forwarding on.
+		</div>
+	</div>
 	<div class="mb-3 text-center">
  		<button type="submit" class="btn btn-primary mb-3">Create Network</button>
 	</div>
@@ -96,5 +117,3 @@ OpenPanel('Create Network');
 
 ClosePanel();
 print '</div>';//container
-
-require("footer.inc.php");

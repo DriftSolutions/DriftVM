@@ -56,10 +56,12 @@ void RunJob(const MachineJob& j) {
 		if (GetMachine(j.name, c, false)) {
 			unique_ptr<MachineDriver> d;
 			if (GetMachineDriver(c, d)) {
+				MachineStatus orig = c->status;
 				if (d->Start()) {
-					c->status = MachineStatus::MS_RUNNING;
-					setError("");
-					UpdateMachineStatus(c);
+					if (orig != c->status) {
+						setError("");
+						UpdateMachineStatus(c);
+					}
 				}
 			} else {
 				printf("Error getting driver for machine %s!\n", j.name.c_str());
@@ -72,10 +74,12 @@ void RunJob(const MachineJob& j) {
 		if (GetMachine(j.name, c, false)) {
 			unique_ptr<MachineDriver> d;
 			if (GetMachineDriver(c, d)) {
+				MachineStatus orig = c->status;
 				if (d->Stop()) {
-					c->status = MachineStatus::MS_STOPPED;
-					setError("");
-					UpdateMachineStatus(c);
+					if (orig != c->status) {
+						setError("");
+						UpdateMachineStatus(c);
+					}
 				}
 			} else {
 				printf("Error getting driver for machine %s!\n", j.name.c_str());

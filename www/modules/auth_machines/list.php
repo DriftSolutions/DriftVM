@@ -10,10 +10,12 @@ OpenPanel('Machines');
 
 $grid->Open();
 
+$cols = 4;
 $grid->OpenHead();
 $grid->OpenRow();
 $grid->Header('Machine');
 $grid->Header('Status');
+$grid->Header('IP');
 $grid->Header('Actions');
 $grid->CloseRow();
 $grid->CloseHead();
@@ -23,14 +25,15 @@ $grid->OpenBody();
 $devices = array();
 $net = SanitizedRequestStr('net');
 if (!empty($net)) {
-	$res = $db->query("SELECT `Name`,`Status` FROM `Machines` WHERE `Network`='".$db->escape($net)."'");
+	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines` WHERE `Network`='".$db->escape($net)."'");
 } else {
-	$res = $db->query("SELECT `Name`,`Status` FROM `Machines`");
+	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines`");
 }
 while ($arr = $db->fetch_assoc($res)) {
 	$grid->OpenRow();
 	$grid->TD('<b><a href="machine-view?name='.xssafe($arr['Name']).'">'.xssafe($arr['Name']).'</a></b>', 'class="text-center"');
 	$grid->TD(GetMachineStatusString($arr));
+	$grid->TD(xssafe($arr['IP']));
 	$str = '<a type="button" class="btn btn-primary" href="machine-view?name='.xssafe($arr['Name']).'">View Machine</a>';
 	if ($arr['Status'] == MS_RUNNING) {
 		$str .= ' <a type="button" class="btn btn-danger" href="machine-view?name='.xssafe($arr['Name']).'&sub=stop">Stop</a>';
@@ -46,7 +49,7 @@ while ($arr = $db->fetch_assoc($res)) {
 
 if ($db->num_rows($res) == 0) {
 	$grid->OpenRow();
-	$grid->TD('- No Machines Found -', 'class="text-center" colspan=3');
+	$grid->TD('- No Machines Found -', 'class="text-center" colspan='.$cols);
 	$grid->CloseRow();
 }
 $db->free_result($res);

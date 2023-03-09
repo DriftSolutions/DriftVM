@@ -20,6 +20,19 @@ inline bool _loadFromRow(const SC_Row& row, Machine * n) {
 	n->type = row.Get("Type");
 	n->network = row.Get("Network");
 	n->create_options = row.Get("CreateOptions");
+	string extra = row.Get("Extra");
+	if (extra.length()) {
+		UniValue obj(UniValue::VOBJ);
+		if (obj.read(extra) && obj.isObject()) {
+			map<string, UniValue> kv;
+			obj.getObjMap(kv);
+			for (const auto& x : kv) {
+				if (x.second.isStr()) {
+					n->updateExtra(x.first, x.second.get_str());
+				}
+			}
+		}
+	}
 	n->status = (MachineStatus)atoi(row.Get("Status").c_str());
 	if (n->id > 0 && n->name.length() && n->type.length() && n->network.length() && strspn(n->name.c_str(), charset) == n->name.length()) {
 		return true;
@@ -34,7 +47,7 @@ bool LoadMachinesFromDB() {
 	}
 
 	AutoMutex(wdMutex);
-	networks.clear();
+	machines.clear();
 	SC_Row row;
 	while (sql->FetchRow(res, row)) {
 		shared_ptr<Machine> n = make_shared<Machine>();
@@ -48,8 +61,8 @@ bool LoadMachinesFromDB() {
 
 bool GetMachine(const string& devname, shared_ptr<Machine>& net, bool use_cache) {
 	AutoMutex(wdMutex);
-	auto x = machines.find(devname);
-	if (use_cache && x != machines.end()) {
+	auto x = use_cache ? machines.find(devname) : machines.end();
+	if (x != machines.end()) {
 		net = x->second;
 		return true;
 	} else {
@@ -91,6 +104,57 @@ bool UpdateMachineIP(shared_ptr<Machine>& c) {
 bool UpdateMachineStatus(shared_ptr<Machine>& c) {
 	AutoMutex(wdMutex);
 	return sql->NoResultQuery(mprintf("UPDATE `Machines` SET `Status`='%u',`LastError`='%s' WHERE `ID`='%d'", c->status, sql->EscapeString(getError()).c_str(), c->id));
+}
+bool UpdateMachineExtra(shared_ptr<Machine>& c) {
+	AutoMutex(wdMutex);
+	UniValue obj(UniValue::VOBJ);
+	extraMap m;
+	c->getExtra(m);
+	for (auto& x : m) {
+		obj.pushKV(x.first, x.second);
+	}
+	return sql->NoResultQuery(mprintf("UPDATE `Machines` SET `Extra`='%s' WHERE `ID`='%d'", obj.write().c_str(), c->id));
+}
+
+#pragma pack(1)
+struct MACHINE_MAC {
+	uint8 parts[6];
+};
+#pragma pack()
+
+// First 2 bytes are the first 2 bytes of the sha256 hash of the network name, the remaining 4 bytes are the IP address
+bool GetMachineMAC(shared_ptr<Machine>& c, string& mac) {
+	if (c->address.length() == 0) {
+		setError("Machine does not have an IP set!");
+		return false;
+	}
+	StrTokenizer st((char *)c->address.c_str(), '.');
+	if (st.NumTok() != 4) {
+		setError("Machine has a malformed IP!");
+		return false;
+	}
+
+	shared_ptr<Network> net;
+	if (!GetNetwork(c->network, net)) {
+		return false;
+	}
+
+	MACHINE_MAC m;
+	memset(&m, 0, sizeof(m));
+	for (int i = 1; i <= 4; i++) {
+		m.parts[i + 1] = atoul(st.stdGetSingleTok(i).c_str());
+	}
+
+	char hash[32];
+	if (!hashdata("sha256", (uint8 *)net->device.c_str(), net->device.length(), hash, sizeof(hash), true)) {
+		setError("Error hashing network name!");
+		return false;
+	}
+	m.parts[0] = hash[0];
+	m.parts[1] = hash[1];
+
+	mac = mprintf("%02x:%02x:%02x:%02x:%02x:%02x", m.parts[0], m.parts[1], m.parts[2], m.parts[3], m.parts[4], m.parts[5]);
+	return true;
 }
 
 bool CreateMachine(shared_ptr<Machine>& c) {
@@ -150,7 +214,6 @@ bool CreateMachine(shared_ptr<Machine>& c) {
 	}
 
 	setError("");
-	c->status = MachineStatus::MS_STOPPED;
 	UpdateMachineStatus(c);
 	goto close_end;
 error_end:

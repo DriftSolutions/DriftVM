@@ -21,40 +21,33 @@ $db->free_result($res);
 
 $type = my_intval(SanitizedRequestStr('nettype', $arr['Type']));
 $addr = SanitizedRequestStr('address', $arr['IP'].'/'.$arr['Netmask']);
+$iface = SanitizedRequestStr('iface', $arr['Interface']);
 
 if (count($_POST)) {
 	if (csrf_verify('network-edit')) {
 		if (is_valid_network_type($type)) {
-			if (!empty($addr)) {
-				$ip = '';
-				$mask = 0;
-				$iptmp = parse_ip_mask($addr, $ip, $mask);
-				if ($iptmp !== FALSE) {
-					$update = [
-						'ID' => $arr['ID'],
-						'IP' => $ip,
-						'Netmask' => $mask,
-						'Type' => $type,
-					];
-					if ($db->update('Networks', $update) === TRUE) {
-						$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
-						try {
-							if ($arr['NormalStatus'] > 0) {
-								$cli->network_activate(['device' => $arr['Device']]);
-							}
-							ShowMsgBox('Success', 'Network updated!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($arr['Device'])));
-							return;
-						} catch (Exception $e) {
-							ShowMsgBox('Error', 'Error activating network changes: '.xssafe($e->getMessage()));
+			if (get_network_device($iface) !== FALSE) {
+				$update = [
+					'ID' => $arr['ID'],
+					'Type' => $type,
+					'Interface' => $iface,
+				];
+				if ($db->update('Networks', $update) === TRUE) {
+					$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+					try {
+						if ($arr['NormalStatus'] > 0) {
+							$cli->network_firewall_apply(['device' => $arr['Device']]);
 						}
-					} else {
-						ShowMsgBox('Error', 'Error updating network! (Is the device name already in use?)');
+						ShowMsgBox('Success', 'Network updated!<br /><br />'.std_redirect('auth_networks','action=view&dev='.xssafe($arr['Device'])));
+						return;
+					} catch (Exception $e) {
+						ShowMsgBox('Error', 'Error activating network changes: '.xssafe($e->getMessage()));
 					}
 				} else {
-					ShowMsgBox('Error', 'That is not a valid subnet IP!');
+					ShowMsgBox('Error', 'Error updating network! (Is the device name already in use?)');
 				}
 			} else {
-				ShowMsgBox('Error', 'The subnet IP cannot be empty!');
+				ShowMsgBox('Error', 'Invalid listening interface selected!');
 			}
 		} else {
 			ShowMsgBox('Error', 'Invalid network type selected!');
@@ -77,14 +70,6 @@ OpenPanel('Update Network');
 		</div>
 	</div>
 	<div class="mb-3 row">
-		<label for="address" class="col-sm-2 col-form-label">Subnet IP/Mask</label>
-		<div class="col-sm-10">
-			<input type="text" class="form-control" id="address" name="address" value="<?php echo xssafe($addr); ?>">
-			Example: 192.168.3.0/24 or 10.3.0.0/16<br />
-			This cannot be an IP range you are already using elsewhere.
-		</div>
-	</div>
-	<div class="mb-3 row">
 		<label for="address" class="col-sm-2 col-form-label">Network Type</label>
 		<div class="col-sm-10">
 			<div class="form-check">
@@ -101,6 +86,20 @@ OpenPanel('Update Network');
 			</div>
 		</div>
 	</div>
+	<div class="mb-3 row">
+		<label for="iface" class="col-sm-2 col-form-label">Listening Interface</label>
+		<div class="col-sm-10">
+			<select class="form-control" id="iface" name="iface">
+			<?php
+				$networks = get_network_interfaces();
+				foreach ($networks as $dev => $arr) {
+					print '<option value="'.xssafe($dev).'"'.iif($dev == $iface,' selected','').'>'.xssafe($dev.' ('.$arr['address'].')').'</option>';
+				}
+			?>
+			</select>
+			Interface to listen for port forwarding on.
+		</div>
+	</div>
 	<div class="mb-3 text-center">
  		<button type="submit" class="btn btn-primary mb-3">Update Network</button>
 	</div>
@@ -109,5 +108,3 @@ OpenPanel('Update Network');
 
 ClosePanel();
 print '</div>';//container
-
-require("footer.inc.php");

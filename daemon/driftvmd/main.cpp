@@ -222,6 +222,25 @@ int main(int argc, const char * argv[]) {
 
 	socks = new DSL_Sockets();
 
+	set<string> ifaces;
+	if (GetNetworkInterfaces(ifaces)) {
+		AutoMutex(wdMutex);
+		printf("Active interfaces:");
+		for (auto& i : ifaces) {
+			printf(" %s", i.c_str());
+		}
+		printf("\n");
+		for (auto& x : networks) {
+			auto n = x.second;
+			if (ifaces.find(n->device) == ifaces.end()) {
+				printf("Network %s is not up, activating...\n", n->device.c_str());
+				ActivateNetwork(n);
+			}
+		}
+	} else {
+		printf("Error getting list of interfaces: %s\n", strerror(errno));
+	}
+
 	if (!RPC_Init()) {
 		printf("Error initializing the RPC subsystem!\n");
 		exit(1);

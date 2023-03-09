@@ -23,6 +23,16 @@ public:
 			return false;
 		}
 
+		shared_ptr<Network> net;
+		if (!GetNetwork(c->network, net)) {
+			return false;
+		}
+
+		string mac;
+		if (!GetMachineMAC(c, mac)) {
+			return false;
+		}
+
 		stringstream cmd;
 		cmd << "lxc-create -n " << c->name << " -t " << escapeshellarg(opts.lxc_template) << " -P " << escapeshellarg(opts.path);
 		if (opts.use_image) {
@@ -35,6 +45,25 @@ public:
 			return false;
 		}
 
+		stringstream configfn;
+		configfn << opts.path << c->name << PATH_SEPS << "config";
+		FILE * fp = fopen(configfn.str().c_str(), "ab");
+		if (fp == NULL) {
+			setError("Error opening container configuration (%s): %s", configfn.str().c_str(), strerror(errno));
+			return false;
+		}
+
+		fprintf(fp, "\n"); // make sure we're on a new line
+		fprintf(fp, "lxc.net.0.type = veth\n");
+		fprintf(fp, "lxc.net.0.flags = up\n");
+		fprintf(fp, "lxc.net.0.link = %s\n", c->network.c_str());
+		fprintf(fp, "lxc.net.0.name = eth0\n");
+		fprintf(fp, "lxc.net.0.hwaddr = %s\n", mac.c_str());
+		fprintf(fp, "lxc.net.0.ipv4.address = %s/%u\n", c->address.c_str(), net->netmask_int);
+		fprintf(fp, "lxc.net.0.ipv4.gateway = auto\n");
+		fclose(fp);
+
+		c->status = MachineStatus::MS_STOPPED;
 		return true;
 	}
 
@@ -49,10 +78,8 @@ public:
 
 		stringstream cmd;
 		cmd << "lxc-info -Hsn " << c->name << " -P " << escapeshellarg(opts.path);
-#ifdef DEBUG
-		printf("Command: %s\n", cmd.str().c_str());
-#endif
 		MachineStatus ret = MachineStatus::MS_STOPPED;
+		setError("");
 #ifndef WIN32
 		FILE * fp = popen(cmd.str().c_str(), "r");
 		if (fp != NULL) {
@@ -99,6 +126,8 @@ public:
 			return false;
 		}
 
+		setError("");
+		c->status = MachineStatus::MS_RUNNING;
 		return true;
 	}
 
@@ -118,6 +147,8 @@ public:
 			return false;
 		}
 
+		setError("");
+		c->status = MachineStatus::MS_STOPPED;
 		return true;
 	}
 
@@ -137,14 +168,35 @@ public:
 			setError("Error deleting LXC container! (rm returned %d)", n);
 			return false;
 		}
+
+		setError("");
 		return true;
 	}
 };
 
+bool GetMachineDriverLXC(shared_ptr<Machine>& c, unique_ptr<MachineDriver>& driver) {
+	driver = make_unique<MachineDriverLXC>(c);
+	return true;
+}
+
 bool GetMachineDriver(/* in */ shared_ptr<Machine>& c, /* out */ unique_ptr<MachineDriver>& driver) {
 	if (c->type == GUID_LXC) {
-		driver = make_unique<MachineDriverLXC>(c);
-		return true;
+		return GetMachineDriverLXC(c, driver);
+	} else if (c->type == GUID_KVM) {
+		return GetMachineDriverKVM(c, driver);
 	}
 	return false;
+}
+
+string MachineDriver::getRandomPassword(size_t len) {
+	static const char * charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	static const size_t charsetlen = strlen(charset);
+	string ret;
+	ret.reserve(len);
+	size_t ind;
+	while (len-- > 0) {
+		dsl_fill_random_buffer((uint8 *)&ind, sizeof(ind));
+		ret += charset[ind % charsetlen];
+	}
+	return ret;
 }

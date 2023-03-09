@@ -16,7 +16,7 @@ apt install lxc lxc-templates
 
 If you want to use KVM:
 
-apt install qemu-system
+apt install qemu-system libvirt-daemon-system virtinst libosinfo-bin osinfo-db
 
 #### Set up web admin panel
 

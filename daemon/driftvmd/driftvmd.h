@@ -77,7 +77,7 @@ public:
 	const uint8& netmask_int = _netmask_int;
 	const string& netmask_str = _netmask_str;
 	NetworkTypes type = NetworkTypes::NT_ROUTED;
-	string iface; // the interface to bridge to for routed bridges
+	string iface; // the interface to listen for port forwards on
 
 	void setNetmask(uint8 mask) {
 		_netmask_int = mask;
@@ -102,7 +102,7 @@ extern networkMap networks;
 
 /* Network functions */
 bool LoadNetworksFromDB();
-bool GetNetwork(const string& devname, shared_ptr<Network>& net);
+bool GetNetwork(const string& devname, shared_ptr<Network>& net, bool use_cache = true);
 void RemoveNetwork(const string& device);
 void RemoveNetworks();
 
@@ -158,7 +158,55 @@ public:
 	}
 };
 
+class CreateOptionsKVM {
+public:
+	string path;
+	string cdrom;
+	string os_type;
+	uint32 memory = 0;
+	uint8 cpu_count = 0;
+	uint32 disk_size = 0;
+	CreateOptionsKVM(const string& json) {
+		UniValue obj(UniValue::VOBJ);
+		if (!obj.read(json) || !obj.isObject()) {
+			return;
+		}
+		if (obj.exists("path") && obj["path"].isStr()) {
+			path = obj["path"].get_str();
+		}
+		if (obj.exists("cdrom") && obj["cdrom"].isStr()) {
+			cdrom = obj["cdrom"].get_str();
+		}
+		if (obj.exists("os_type") && obj["os_type"].isStr()) {
+			os_type = obj["os_type"].get_str();
+		}
+		if (obj.exists("memory") && obj["memory"].isNum()) {
+			memory = obj["memory"].get_int();
+		}
+		if (obj.exists("cpu_count") && obj["cpu_count"].isNum()) {
+			cpu_count = obj["cpu_count"].get_int();
+		}
+		if (obj.exists("disk_size") && obj["disk_size"].isNum()) {
+			disk_size = obj["disk_size"].get_int();
+		}
+	}
+
+	bool IsValid() {
+		if (path.length() == 0) { return false; }
+		if (cdrom.length() == 0) { return false; }
+		if (os_type.length() == 0) { return false; }
+		if (memory < 512) { return false; }
+		if (cpu_count == 0) { return false; }
+		if (disk_size < 1) { return false; }
+		return true;
+	}
+};
+
+typedef map<string, string> extraMap;
+
 class Machine {
+private:
+	extraMap extra;
 public:
 	int id = 0;
 	string name;
@@ -172,11 +220,30 @@ public:
 	bool canDelete() {
 		return (status == MachineStatus::MS_STOPPED || status == MachineStatus::MS_ERROR_CREATING);
 	}
+
+	void updateExtra(string k, string v) {
+		AutoMutex(wdMutex);
+		extra[k] = v;
+	}
+	string getExtra(const string& key, const string& def = "") {
+		AutoMutex(wdMutex);
+		auto x = extra.find(key);
+		if (x != extra.end()) {
+			return x->second;
+		}
+		return def;
+	}
+	void getExtra(extraMap& m) {
+		AutoMutex(wdMutex);
+		m = extra;
+	}
 };
 typedef map<string, shared_ptr<Machine>> machineMap;
 extern machineMap machines;
 
 class MachineDriver {
+protected:
+	string getRandomPassword(size_t len);
 public:
 	shared_ptr<Machine> c;
 	MachineDriver(shared_ptr<Machine>& pc) {
@@ -203,6 +270,8 @@ public:
 extern const string GUID_LXC;
 extern const string GUID_KVM;
 bool GetMachineDriver(/* in */ shared_ptr<Machine>& c, /* out */ unique_ptr<MachineDriver>& driver);
+bool GetMachineDriverLXC(shared_ptr<Machine>& c, unique_ptr<MachineDriver>& driver);
+bool GetMachineDriverKVM(shared_ptr<Machine>& c, unique_ptr<MachineDriver>& driver);
 
 /* Machine functions */
 bool LoadMachinesFromDB();
@@ -212,6 +281,8 @@ bool IsIPInUse(shared_ptr<Network>& net, const string& ip);
 
 bool UpdateMachineIP(shared_ptr<Machine>& c);
 bool UpdateMachineStatus(shared_ptr<Machine>& c);
+bool UpdateMachineExtra(shared_ptr<Machine>& c);
+bool GetMachineMAC(shared_ptr<Machine>& c, string& mac);
 bool CreateMachine(shared_ptr<Machine>& c);
 
 bool RemoveMachineFromDB(const string& name);
@@ -224,7 +295,7 @@ void RunJobs();
 
 bool firewall_init();
 bool firewall_add_rules(shared_ptr<Network>& net);
-bool firewall_del_rules(shared_ptr<Network>& net);
+bool firewall_flush_rules(shared_ptr<Network>& net);
 
 void driftvmd_printf(const char * fmt, ...);
 #define printf driftvmd_printf

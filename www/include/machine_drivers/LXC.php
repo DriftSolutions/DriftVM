@@ -92,4 +92,6 @@ class MachineDriverLXC extends MachineDriver {
 	public function Stop($machine) { return false;	}
 };
 
-RegisterMachineDriver(new MachineDriverLXC());
+if (HaveExecutable('lxc-create')) {
+	RegisterMachineDriver(new MachineDriverLXC());
+}

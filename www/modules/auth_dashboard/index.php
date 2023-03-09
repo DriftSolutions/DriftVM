@@ -129,6 +129,7 @@ while ($arr = $db->fetch_assoc($res)) {
 }
 $db->free_result($res);
 $networks = net_get_interfaces();
+ksort($networks);
 $wanted_families = [2,10]; // 2 = IPv4, 10 = IPv6
 $count = 0;
 foreach ($networks as $dev => $arr) {

@@ -14,3 +14,13 @@ string getError();
 
 int GetNumCPUs();
 string escapeshellarg(const string& str);
+
+class NetworkInterface {
+public:
+	string device;
+	string ip;
+};
+
+/* These are the machine's interfaces, not DriftVM interfaces */
+bool GetNetworkInterfaces(vector<NetworkInterface>& ifaces);
+bool GetNetworkInterfaces(set<string>& ifaces);

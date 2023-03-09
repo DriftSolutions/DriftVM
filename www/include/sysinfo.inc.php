@@ -168,3 +168,29 @@ function GetOSVersion() {
 	return php_uname('s').' '.php_uname('r').' '.php_uname('v');
 }
 
+function GetOSInfo() {
+	$ret = cache1_get('sysinfo_os_info');
+	if ($ret !== FALSE) {
+		return $ret;
+	}
+
+	$tmp = explode("\n", shell_exec('osinfo-query os'));
+	unset($tmp[0]);// headers
+	unset($tmp[1]);// headers
+
+	$ret = [];
+	foreach ($tmp as $line) {
+		$arr = explode('|', $line);
+		if (count($arr) != 4) { continue; }
+		$key = trim($arr[0]);
+		$disp = trim($arr[1]);
+		if (!empty($key) && !empty($disp)) {
+			$ret[$key] = $disp;
+		}
+	}
+
+	if (count($ret)) {
+		cache1_store('sysinfo_os_info', $ret, 3600);
+	}
+	return $ret;
+}

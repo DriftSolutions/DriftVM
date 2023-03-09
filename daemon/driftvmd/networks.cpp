@@ -26,7 +26,7 @@ inline bool _loadFromRow(const SC_Row& row, Network * n) {
 	n->setNetmask(atoi(row.Get("Netmask").c_str()));
 	n->type = (NetworkTypes)atoi(row.Get("Type").c_str());
 	n->iface = row.Get("Interface");
-	if (n->id > 0 && n->device.length() && n->address.length() && n->netmask_str.length() && strspn(n->device.c_str(), charset) == n->device.length()) {
+	if (n->id > 0 && n->device.length() && n->address.length() && n->iface.length() && n->netmask_str.length() && strspn(n->device.c_str(), charset) == n->device.length()) {
 		return true;
 	}
 	return false;
@@ -51,9 +51,9 @@ bool LoadNetworksFromDB() {
 	return true;
 }
 
-bool GetNetwork(const string& devname, shared_ptr<Network>& net) {
+bool GetNetwork(const string& devname, shared_ptr<Network>& net, bool use_cache) {
 	AutoMutex(wdMutex);
-	auto x = networks.find(devname);
+	auto x = use_cache ? networks.find(devname) : networks.end();
 	if (x != networks.end()) {
 		net = x->second;
 		return true;
@@ -75,15 +75,11 @@ bool GetNetwork(const string& devname, shared_ptr<Network>& net) {
 	}
 }
 
-#ifndef WIN32
-
-class NetworkInterface {
-public:
-	string device;
-	string ip;
-};
-
 bool GetNetworkInterfaces(vector<NetworkInterface>& ifaces) {
+	ifaces.clear();
+#ifdef WIN32
+	return false;
+#else
 	struct ifaddrs * ifaddr = NULL;
 	if (getifaddrs(&ifaddr) != 0) {
 		return false;
@@ -103,7 +99,31 @@ bool GetNetworkInterfaces(vector<NetworkInterface>& ifaces) {
 
 	freeifaddrs(ifaddr);
 	return true;
+#endif
 }
+
+bool GetNetworkInterfaces(set<string>& ifaces) {
+	ifaces.clear();
+#ifdef WIN32
+	return false;
+#else
+	struct ifaddrs * ifaddr = NULL;
+	if (getifaddrs(&ifaddr) != 0) {
+		return false;
+	}
+
+	for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL) { continue; }
+		if (ifa->ifa_addr->sa_family != AF_INET) { continue; }
+		ifaces.insert(ifa->ifa_name);
+	}
+
+	freeifaddrs(ifaddr);
+	return true;
+#endif
+}
+
+#ifndef WIN32
 
 inline bool set_if_addr(const char * ifname, const char * ip, const char * subnet_mask) {
 	struct ifreq ifr;
@@ -174,25 +194,6 @@ inline bool set_if_status(const char * ifname, bool up) {
 	return true;
 }
 
-inline bool _addOrRemoveBridgeInterface(shared_ptr<Network>& net, int fd, unsigned long req, const char * iface) {
-	unsigned int ind = if_nametoindex(net->iface.c_str());
-	if (ind == 0) {
-		setError("Error finding interface %s", net->iface.c_str());
-		return false;
-	}
-
-	struct ifreq ifr;
-	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, net->device.c_str(), IFNAMSIZ);
-	ifr.ifr_ifindex = ind;
-	int n = ioctl(fd, req, &ifr);
-	if (n < 0 && errno != EEXIST) {
-		setError("Error adding interface to bridge: %s", strerror(errno));
-		return false;
-	}
-	return true;
-}
-
 bool ActivateNetwork(shared_ptr<Network>& net) {
 	AutoMutex(wdMutex);
 	int n = 0;
@@ -210,32 +211,6 @@ bool ActivateNetwork(shared_ptr<Network>& net) {
 	if (n < 0 && errno != EEXIST) {
 		setError("Error while creating bridge: %s", strerror(errno));
 		goto error_end;
-	}
-
-	/* If routed, add the interface */
-	if (net->type == NetworkTypes::NT_ROUTED) {
-		/*
-		if (net->iface.length() == 0) {
-			setError("Bridge type is routed but no interface set!");
-			goto error_end;
-		}
-		*/
-
-		/* There isn't a way to remove all interfaces, so we're gonna have to check them all */
-		/*
-		vector<NetworkInterface> ifaces;
-		if (!GetNetworkInterfaces(ifaces)) {
-			setError("Error getting list of local interfaces!");
-			goto error_end;
-		}
-		for (auto& x : ifaces) {
-			_addOrRemoveBridgeInterface(net, fd, SIOCBRDELIF, x.device.c_str());
-		}
-
-		if (!_addOrRemoveBridgeInterface(net, fd, SIOCBRADDIF, net->iface.c_str())) {
-			goto error_end;
-		}
-		*/
 	}
 
 	struct in_addr in;
@@ -277,7 +252,7 @@ bool DeactivateNetwork(shared_ptr<Network>& net) {
 		return false;
 	}
 
-	firewall_del_rules(net);
+	firewall_flush_rules(net);
 
 	int n = 0;
 	bool ret = true;
