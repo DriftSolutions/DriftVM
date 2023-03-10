@@ -48,7 +48,6 @@ void network_firewall_apply(RPC_Request& req) {
 		req.SetError(getError());
 		return;
 	}
-	firewall_flush_rules(net);
 	if (firewall_add_rules(net)) {
 		req.SetReply(true);
 	} else {

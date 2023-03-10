@@ -166,10 +166,12 @@ if (!empty($error_msg)) {
 }
 
 print '<div class="container">';
+print '<div class="row">';
+print '<div class="col-12 col-sm-8 col-md-8 col-lg-4">';
 OpenPanel('Log in to your account');
 ?>
 <form action="login" method="POST">
-  <input class="form-control" type="text" placeholder="<?php echo xssafe('Username'); ?>" name="user" value="<?php echo xssafe(SanitizedRequestStr('user')); ?>" required>
+	<input class="form-control" type="text" placeholder="<?php echo xssafe('Username'); ?>" name="user" value="<?php echo xssafe(SanitizedRequestStr('user')); ?>" required>
   <input class="form-control" type="password" placeholder="<?php echo xssafe('Password'); ?>" name="pass" required>
   <?php
   	echo csrf_get_html('login');
@@ -181,6 +183,8 @@ OpenPanel('Log in to your account');
 </form>
 <?php
 ClosePanel();
+print '</div>';//col
+print '</div>';//row
 print '</div>';//container
 
 require("footer.inc.php");

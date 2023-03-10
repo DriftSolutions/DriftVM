@@ -22,6 +22,12 @@ string getError() {
 	return errstr;
 }
 
+string GetTempDirFile(string fn) {
+	stringstream sstr;
+	sstr << config.tmp_dir << fn;
+	return sstr.str();
+}
+
 int GetNumCPUs() {
 #ifdef _WIN32
 	SYSTEM_INFO si;

@@ -102,7 +102,7 @@ if ($sub == 'stop') {
 }
 
 print '<div class="container">';
-OpenPanel('Machine Information: '.xssafe($arr['Name']).' <a type="buton" class="btn btn-sm btn-primary float-end" href="machine-view?name='.xssafe($arr['Name']).'">Refresh</a>');
+OpenPanel('Machine Information: '.xssafe($arr['Name']).' <a type="button" class="btn btn-sm btn-primary float-end" href="machine-view?name='.xssafe($arr['Name']).'">Refresh</a>');
 
 $grid->Open();
 $grid->OpenBody();

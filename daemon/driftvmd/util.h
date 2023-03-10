@@ -12,6 +12,7 @@
 void setError(const char * fmt, ...);
 string getError();
 
+string GetTempDirFile(string fn);
 int GetNumCPUs();
 string escapeshellarg(const string& str);
 

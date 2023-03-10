@@ -293,7 +293,6 @@ void QueueMachineJob(MachineStatus func, const string& name);
 bool IsJobQueued(const string& name);
 void RunJobs();
 
-bool firewall_init();
 bool firewall_add_rules(shared_ptr<Network>& net);
 bool firewall_flush_rules(shared_ptr<Network>& net);
 

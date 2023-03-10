@@ -51,15 +51,105 @@ bool firewall_delete_if_exists(const string& rule, const string& table = "filter
 	return true;
 }
 
+class FirewallRules {
+public:
+	set<string> chains;
+	vector<string> rules;
+	vector<string> check_or_add;
+	vector<string> delete_if_exists;
+};
 
-bool firewall_init() {
-	quiet_system("iptables -N DRIFTVM_FWD");
-	if (!firewall_check_or_add("FORWARD -j DRIFTVM_FWD")) {
-		return false;
+class FirewallState {
+private:
+map<string, FirewallRules> rules;
+
+public:
+	shared_ptr<Network> net;
+
+	FirewallState(shared_ptr<Network>& pnet) {
+		net = pnet;
 	}
 
-	return true;
-}
+	void addChain(const string& chain, const string& table = "filter") {
+		auto x = rules.find(table);
+		if (x != rules.end()) {
+			x->second.chains.insert(chain);
+		} else {
+			FirewallRules r;
+			r.chains.insert(chain);
+			rules[table] = r;
+		}
+	}
+	void addRule(const string& rule, const string& table = "filter") {
+		auto x = rules.find(table);
+		if (x != rules.end()) {
+			x->second.rules.push_back(rule);
+		} else {
+			FirewallRules r;
+			r.rules.push_back(rule);
+			rules[table] = r;
+		}
+	}
+	void addCheckOrAdd(const string& rule, const string& table = "filter") {
+		auto x = rules.find(table);
+		if (x != rules.end()) {
+			x->second.check_or_add.push_back(rule);
+		} else {
+			FirewallRules r;
+			r.check_or_add.push_back(rule);
+			rules[table] = r;
+		}
+	}
+	void addDeleteIfExists(const string& rule, const string& table = "filter") {
+		auto x = rules.find(table);
+		if (x != rules.end()) {
+			x->second.delete_if_exists.push_back(rule);
+		} else {
+			FirewallRules r;
+			r.delete_if_exists.push_back(rule);
+			rules[table] = r;
+		}
+	}
+
+	bool apply() {
+		// Create chains
+		for (auto& t : rules) {
+			for (auto& r : t.second.chains) {
+				stringstream cmd;
+				cmd << "iptables -t " << t.first << " -N " << r;
+				quiet_system(cmd.str().c_str());
+			}
+		}
+
+		bool ret = true;
+		for (auto& t : rules) {
+			for (auto& r : t.second.rules) {
+				stringstream cmd;
+				cmd << "iptables -t " << t.first << " " << r;
+				int n = system(cmd.str().c_str());
+#ifdef DEBUG
+				printf("Command: %s\n", cmd.str().c_str());
+#endif
+				if (n != 0) {
+					setError("Error adding firewall rule: %s\niptables return value: %d", cmd.str().c_str(), n);
+					ret = false;
+				}
+			}
+			for (auto& r : t.second.check_or_add) {
+				if (!firewall_check_or_add(r, t.first)) {
+					ret = false;
+				}
+			}
+			for (auto& r : t.second.delete_if_exists) {
+				if (!firewall_delete_if_exists(r, t.first)) {
+					ret = false;
+				}
+			}
+		}
+
+		return ret;
+	}
+};
 
 inline string GetPostRule(shared_ptr<Network>& net) {
 	string network = mprintf("%s/%u", net->address.c_str(), net->netmask_int);
@@ -92,7 +182,7 @@ vector<shared_ptr<Machine>> GetNetworkMachines(const string& net) {
 }
 
 //-A TCP_COINS -i ens192 -p tcp -m tcp --dport 18302 -m state --state NEW -j DNAT --to-destination 10.3.0.10:18302
-bool firewall_add_machine_rules(shared_ptr<Network>& net, shared_ptr<Machine>& c, const string& chain, vector<string>& commands) {
+bool firewall_add_machine_rules(FirewallState& f, const string& chain, shared_ptr<Machine>& c) {
 	MYSQL_RES * res = sql->Query(mprintf("SELECT * FROM `PortForwards` WHERE `MachineID`=%d", c->id));
 	if (res == NULL) {
 		setError("Error getting port forwards for machine %s", c->name.c_str());
@@ -108,13 +198,13 @@ bool firewall_add_machine_rules(shared_ptr<Network>& net, shared_ptr<Machine>& c
 			// Enable forwarding outputs for this network
 			if (type == 0 || type == 2) {
 				stringstream cmd;
-				cmd << "iptables -t nat -A " << chain << " -p tcp -m tcp --dport " << extport << " -m state --state NEW -j DNAT --to-destination " << c->address << ":" << intport;
-				commands.push_back(cmd.str());
+				cmd << "-A " << chain << " -p tcp -m tcp --dport " << extport << " -m state --state NEW -j DNAT --to-destination " << c->address << ":" << intport;
+				f.addRule(cmd.str(), "nat");
 			}
 			if (type == 1 || type == 2) {
 				stringstream cmd;
-				cmd << "iptables -t nat -A " << chain << " -p udp --dport " << extport << " -j DNAT --to-destination " << c->address << ":" << intport;
-				commands.push_back(cmd.str());
+				cmd << "-A " << chain << " -p udp --dport " << extport << " -j DNAT --to-destination " << c->address << ":" << intport;
+				f.addRule(cmd.str(), "nat");
 			}
 		} else {
 			printf("Invalid port forwarding rule with ID %s for machine %s\n", row.Get("ID").c_str(), c->name.c_str());
@@ -124,11 +214,11 @@ bool firewall_add_machine_rules(shared_ptr<Network>& net, shared_ptr<Machine>& c
 	return true;
 }
 
-bool firewall_add_machine_rules(shared_ptr<Network>& net, const string& chain, vector<string>& commands) {
+bool firewall_add_machine_rules(FirewallState& f, const string& chain) {
 	bool ret = true;
-	auto m = GetNetworkMachines(net->device);
+	auto m = GetNetworkMachines(f.net->device);
 	for (auto& x : m) {
-		if (!firewall_add_machine_rules(net, x, chain, commands)) {
+		if (!firewall_add_machine_rules(f, chain, x)) {
 			ret = false;
 		}
 	}
@@ -145,108 +235,74 @@ bool firewall_add_rules(shared_ptr<Network>& net) {
 	string chain = "DRIFTVM_FWD_" + net->device;
 	std::transform(chain.begin(), chain.end(), chain.begin(), ::toupper);
 
-	vector<string> commands;
-	bool ret = true;
+	FirewallState f(net);
+	f.addChain("DRIFTVM_FWD");
+	f.addChain(chain);
+	f.addChain(chain, "nat");
+
+	f.addCheckOrAdd("FORWARD -j DRIFTVM_FWD");
+	f.addCheckOrAdd(mprintf("DRIFTVM_FWD -j %s", chain.c_str()));
 
 	{
-		// Create chain for this network
 		stringstream cmd;
-		cmd << "iptables -N " << chain;
-		quiet_system(cmd.str());
+		cmd << "-F " << chain;
+		f.addRule(cmd.str());
+		f.addRule(cmd.str(), "nat");
 	}
 
-	if (!firewall_check_or_add(mprintf("DRIFTVM_FWD -j %s", chain.c_str()))) {
-		return false;
-	}
-
-	printf("[%s] %u %s\n", net->device.c_str(), net->type, net->iface.c_str());
 	if (net->type == NetworkTypes::NT_ROUTED) {
 		{
 			// Enable forwarding inputs for this network
 			stringstream cmd;
-			cmd << "iptables -A " << chain << " -i " << net->device << " -j ACCEPT";
-			commands.push_back(cmd.str());
+			cmd << "-A " << chain << " -i " << net->device << " -j ACCEPT";
+			f.addRule(cmd.str());
 		}
 		{
 			// Enable forwarding outputs for this network
 			stringstream cmd;
-			cmd << "iptables -A " << chain << " -o " << net->device << " -j ACCEPT";
-			commands.push_back(cmd.str());
+			cmd << "-A " << chain << " -o " << net->device << " -j ACCEPT";
+			f.addRule(cmd.str());
 		}
 
-		// Add postrouting for this network
-		if (!firewall_check_or_add(GetPostRule(net).c_str(), "nat")) {
-			ret = false;
-		}
-
-		{
-			// Create chain for this network for port forwarding
-			stringstream cmd;
-			cmd << "iptables -t nat -N " << chain;
-			quiet_system(cmd.str());
-		}
+		// Add postrouting MASQUERADE for this network
+		f.addCheckOrAdd(GetPostRule(net).c_str(), "nat");
 
 		// Add port forwarding prerouting for this network
-		if (!firewall_check_or_add(GetPortForwardingTCPRule(net, chain).c_str(), "nat")) {
-			ret = false;
-		}
-		if (!firewall_check_or_add(GetPortForwardingUDPRule(net, chain).c_str(), "nat")) {
-			ret = false;
-		}
+		f.addCheckOrAdd(GetPortForwardingTCPRule(net, chain).c_str(), "nat");
+		f.addCheckOrAdd(GetPortForwardingUDPRule(net, chain).c_str(), "nat");
 
-		if (!firewall_add_machine_rules(net, chain, commands)) {
-			ret = false;
+		if (!firewall_add_machine_rules(f, chain)) {
+			return false;
 		}
 	} else {
 		{
 			// Disable forwarding inputs for this network
 			stringstream cmd;
-			cmd << "iptables -A " << chain << " -i " << net->device << " -j DROP";
-			commands.push_back(cmd.str());
+			cmd << "-A " << chain << " -i " << net->device << " -j DROP";
+			f.addRule(cmd.str());
 		}
 		{
 			// Disable forwarding outputs for this network
 			stringstream cmd;
-			cmd << "iptables -A " << chain << " -o " << net->device << " -j DROP";
-			commands.push_back(cmd.str());
+			cmd << "-A " << chain << " -o " << net->device << " -j DROP";
+			f.addRule(cmd.str());
 		}
 
-		// Remove postrouting for this network
-		if (!firewall_delete_if_exists(GetPostRule(net).c_str(), "nat")) {
-			ret = false;
-		}
+		// Remove postrouting MASQUERADE for this network
+		f.addDeleteIfExists(GetPostRule(net).c_str(), "nat");
 
-		{
-			// Flush chain for this network for port forwarding
-			stringstream cmd;
-			cmd << "iptables -t nat -F " << chain;
-			quiet_system(cmd.str());
-		}
-
-		// Add port forwarding prerouting for this network
-		if (!firewall_delete_if_exists(GetPortForwardingTCPRule(net, chain).c_str(), "nat")) {
-			ret = false;
-		}
-		if (!firewall_delete_if_exists(GetPortForwardingUDPRule(net, chain).c_str(), "nat")) {
-			ret = false;
-		}
+		// Delete port forwarding prerouting for this network
+		f.addDeleteIfExists(GetPortForwardingTCPRule(net, chain).c_str(), "nat");
+		f.addDeleteIfExists(GetPortForwardingUDPRule(net, chain).c_str(), "nat");
 	}
 
-	for (auto& cmd : commands) {
-#ifdef DEBUG
-		printf("Command: %s\n", cmd.c_str());
-#endif
-		int n = system(cmd.c_str());
-		if (n != 0) { // Allow the add chain to return 256 because it already exists
-			setError("Error adding firewall rule: %s, return value: %d", cmd.c_str(), n);
-			ret = false;
-		}
-	}
-
-	return ret;
+	return f.apply();
 }
 
 bool firewall_flush_rules(shared_ptr<Network>& net) {
+	printf("Flush\n");
+	return false;
+
 	string chain = "DRIFTVM_FWD_" + net->device;
 	std::transform(chain.begin(), chain.end(), chain.begin(), ::toupper);
 

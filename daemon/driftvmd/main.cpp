@@ -21,12 +21,6 @@ DSL_Mutex wdMutex;
 DSL_Sockets * socks = NULL;
 DB_MySQL * sql = NULL;
 
-string GetTempDirFile(string fn) {
-	stringstream sstr;
-	sstr << config.tmp_dir << PATH_SEPS << fn;
-	return sstr.str();
-}
-
 bool LoadConfig() {
 	memset(&config, 0, sizeof(config));
 
@@ -204,10 +198,6 @@ int main(int argc, const char * argv[]) {
 	if (config.log_fp != NULL) {
 		/* disable buffering */
 		setbuf(config.log_fp, NULL);
-	}
-
-	if (!firewall_init()) {
-		exit(1);
 	}
 
 	atexit(our_cleanup);

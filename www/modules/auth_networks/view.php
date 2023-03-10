@@ -62,7 +62,7 @@ if ($sub == 'deactivate' || $sub == 'activate') {
 $nd = get_network_device($arr['Device']);
 
 print '<div class="container">';
-OpenPanel('Network Information: '.xssafe($arr['Device']).' [<a href="network-view?dev='.xssafe($arr['Device']).'">Refresh</a>]');
+OpenPanel('Network Information: '.xssafe($arr['Device']).' <a type="button" class="btn btn-sm btn-primary float-end" href="network-view?dev='.xssafe($arr['Device']).'">Refresh</a>');
 
 $grid->Open();
 $grid->OpenBody();
