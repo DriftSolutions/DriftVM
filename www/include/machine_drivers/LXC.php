@@ -60,6 +60,14 @@ class MachineDriverLXC extends MachineDriver {
 				'label' => 'Disk Image Size (GB)',
 				'desc' => '',
 			],
+			'postinst' => [
+				'type' => 'text',
+				'value' => '',
+				'default' => GetSetting('default_lxc_postinst'),
+				'label' => 'Post-Install Script',
+				'desc' => '',
+				'required' => false,
+			],
 		];
 	}
 

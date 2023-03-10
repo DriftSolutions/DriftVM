@@ -80,9 +80,11 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 				</div>
 				<iframe class="flex-grow-1 h-100" name="module" id="module"></iframe>
 			</div><!-- /flex-row -->
-			<div class="container flex-shrink-0 text-center">
-				Copyright 2023 Drift Solutions. All Rights Reserved.<br />
-				DriftVM is licensed under the <a href="https://github.com/DriftSolutions/DriftVM/blob/main/LICENSE" target="_blank">GNU General Public License v3.0</a> or any later version.
+			<div class="flex-shrink-0 text-bg-dark p-3">
+				<div class="container text-center">
+					Copyright 2023 Drift Solutions. All Rights Reserved.<br />
+					DriftVM is licensed under the <a href="https://github.com/DriftSolutions/DriftVM/blob/main/LICENSE" target="_blank">GNU General Public License v3.0</a> or any later version.
+				</div>
 			</div>
 		</div>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>

@@ -16,7 +16,7 @@ if (!HaveSettings()) {
 	CacheAllSettings();
 }
 
-$names = ['default_listen_iface','lxc_paths','lxc_templates','kvm_paths','default_kvm_os'];
+$names = ['default_listen_iface','lxc_paths','lxc_templates','default_lxc_postinst','kvm_paths','default_kvm_os'];
 $settings = [];
 foreach ($names as $n) {
 	$settings[$n] = SanitizedRequestStr($n, GetSetting($n));
@@ -101,21 +101,28 @@ OpenPanel('Edit Settings');
 	<div class="mb-3 row">
 		<label for="lxcPaths" class="col-sm-2 col-form-label">LXC Path(s)</label>
 		<div class="col-sm-10">
-			<input type="text" class="form-control" id="lxcPaths" name="lxc_paths" value="<?php echo xssafe($settings['lxc_paths']); ?>">
+			<input type="text" class="form-control" id="lxcPaths" name="lxc_paths" value="<?php echo xssafe($settings['lxc_paths']); ?>" required>
 			The path(s) to store your LXC containers under. Separate with a semicolon (;) for multiple paths.
 		</div>
 	</div>
 	<div class="mb-3 row">
 		<label for="lxcTemplates" class="col-sm-2 col-form-label">LXC Template(s)</label>
 		<div class="col-sm-10">
-			<input type="text" class="form-control" id="lxcTemplates" name="lxc_templates" value="<?php echo xssafe($settings['lxc_templates']); ?>">
+			<input type="text" class="form-control" id="lxcTemplates" name="lxc_templates" value="<?php echo xssafe($settings['lxc_templates']); ?>" required>
 			The LXC templates to offer during container creation. Separate with a semicolon (;) for multiple options.
+		</div>
+	</div>
+	<div class="mb-3 row">
+		<label for="default_lxc_postinst" class="col-sm-2 col-form-label">Default LXC Post-Install Script</label>
+		<div class="col-sm-10">
+			<input type="text" class="form-control" id="default_lxc_postinst" name="default_lxc_postinst" value="<?php echo xssafe($settings['default_lxc_postinst']); ?>">
+			Path to a default post-install script to use for LXC machines (optional.) It will be copied into the VM as /root/postinst and executed.
 		</div>
 	</div>
 	<div class="mb-3 row">
 		<label for="kvmPaths" class="col-sm-2 col-form-label">KVM Path(s)</label>
 		<div class="col-sm-10">
-			<input type="text" class="form-control" id="kvmPaths" name="kvm_paths" value="<?php echo xssafe($settings['kvm_paths']); ?>">
+			<input type="text" class="form-control" id="kvmPaths" name="kvm_paths" value="<?php echo xssafe($settings['kvm_paths']); ?>" required>
 			The path(s) to store your KVM disk images under. Separate with a semicolon (;) for multiple paths.
 		</div>
 	</div>

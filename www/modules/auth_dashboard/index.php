@@ -12,26 +12,25 @@ OpenPanel('System Information');
 ?>
 <div class="row">
 	<div class="col text-center">
-		CPU Load<br />
-		<?php
-		$tmp = GetLoadAvg();
-		print sprintf('%.1f%%', round($tmp[0] * 100, 1));
-		//print_r($tmp);
-		?>
+		<h5>CPU Load</h5>
+		<h3><?php
+			$tmp = GetLoadAvg();
+			print sprintf('%.1f%%', round($tmp[0] * 100, 1));
+		?></h3>
 	</div>
 	<div class="col text-center">
-		Memory Used<br />
-		<?php
-		$mi = GetMemoryInfo();
-		print sprintf('%.1f%%', round(($mi['ram']['used']/$mi['ram']['total']) * 100, 1));
-		?>
+		<h5>Memory Used</h5>
+		<h3><?php
+			$mi = GetMemoryInfo();
+			print sprintf('%.1f%%', round(($mi['ram']['used']/$mi['ram']['total']) * 100, 1));
+		?></h3>
 	</div>
 	<div class="col text-center">
-		Disk Space Used<br />
-		<?php
-		$tmp = GetDiskUsedPercent();
-		print sprintf('%.1f%%', round($tmp * 100, 1));
-		?>
+		<h5>Disk Space Used</h5>
+		<h3><?php
+			$tmp = GetDiskUsedPercent();
+			print sprintf('%.1f%%', round($tmp * 100, 1));
+		?></h3>
 	</div>
 </div>
 <?php
@@ -60,7 +59,7 @@ try {
 	$tmp = $cli->getinfo(array());
 	$str = 'Connected, v'.xssafe($tmp['version']);
 } catch (Exception $e) {
-	$str= 'Error: '.xssafe($e->getMessage());
+	$str = '<span class="text-danger">'.xssafe($e->getMessage()).'</span>';
 }
 $uptime = trim(shell_exec('uptime -p'));
 AddInfoLine('System Uptime', xssafe($uptime), 'driftvmd', $str);

@@ -17,6 +17,7 @@ define('MS_UPDATING', 3);
 define('MS_STARTING', 4);
 define('MS_STOPPING', 5);
 define('MS_DELETING', 6);
+define('MS_POST_INST', 7);
 define('MS_RUNNING', 100);
 
 define('GUID_LXC', '{46634A47-CB89-4318-B98D-A691138C256B}');
@@ -40,6 +41,8 @@ function GetMachineStatusString($arr) {
 			return "Deleting";
 		case MS_RUNNING:
 			return 'Running';
+		case MS_POST_INST:
+			return 'Running Post-Install Script';
 		default:
 			return 'Unknown ('.xssafe($arr['Status']).')';
 	}

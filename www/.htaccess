@@ -1,0 +1,13 @@
+Options -Indexes
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+RewriteRule ^login$ module.php?mod=login
+RewriteRule ^logout$ module.php?mod=logout
+RewriteRule ^dashboard$ module.php?mod=auth_dashboard
+RewriteRule ^settings$ module.php?mod=auth_settings
+RewriteRule ^networks$ module.php?mod=auth_networks
+RewriteRule ^network-(.*)$ module.php?mod=auth_networks&action=$1 [QSA]
+RewriteRule ^machines$ module.php?mod=auth_machines [QSA]
+RewriteRule ^machine-(.*)$ module.php?mod=auth_machines&action=$1 [QSA]
+</IfModule>

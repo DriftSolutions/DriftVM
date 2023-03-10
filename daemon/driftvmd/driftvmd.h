@@ -120,6 +120,7 @@ enum class MachineStatus {
 	MS_STARTING = 4,
 	MS_STOPPING = 5,
 	MS_DELETING = 6,
+	MS_POST_INST = 7,
 	MS_RUNNING = 100
 };
 
@@ -129,6 +130,7 @@ public:
 	string lxc_template;
 	bool use_image = false;
 	int image_size = 0;
+	string postinst;
 	CreateOptionsLXC(const string& json) {
 		UniValue obj(UniValue::VOBJ);
 		if (!obj.read(json) || !obj.isObject()) {
@@ -140,8 +142,11 @@ public:
 		if (obj.exists("lxc_template") && obj["lxc_template"].isStr()) {
 			lxc_template = obj["lxc_template"].get_str();
 		}
-		if (obj.exists("use_image") && obj["use_image"].isBool()) {
-			use_image = obj["use_image"].get_bool();
+		if (obj.exists("postinst") && obj["postinst"].isStr()) {
+			postinst = obj["postinst"].get_str();
+		}
+		if (obj.exists("use_image") && obj["use_image"].isNum()) {
+			use_image = (obj["use_image"].get_int() == 1);
 		}
 		if (obj.exists("image_size") && obj["image_size"].isNum()) {
 			image_size = obj["image_size"].get_int();

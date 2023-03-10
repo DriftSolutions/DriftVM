@@ -140,7 +140,7 @@ if (!empty($arr['Extra'])) {
 	if (is_array($tmp) && count($tmp)) {
 		foreach ($tmp as $k => $v) {
 			$grid->OpenRow();
-			$grid->TD(xssafe($k), 'class="text-right"');
+			$grid->TD(xssafe($k.':'), 'class="text-right"');
 			if ($k == 'VNC Display') {
 				$host = empty($_SERVER['HTTP_HOST']) ? $_SERVER['SERVER_ADDR'] : $_SERVER['HTTP_HOST'];
 				$grid->TD('<a href="machine-vnc?name='.xssafe($arr['Name']).'">'.xssafe($host.$v).'</a>');
@@ -149,6 +149,20 @@ if (!empty($arr['Extra'])) {
 			}
 			$grid->CloseRow();
 		}
+	}
+}
+
+if (!empty($arr['CreateOptions'])) {
+	$tmp = json_decode($arr['CreateOptions'], TRUE);
+	if (is_array($tmp) && count($tmp)) {
+		$grid->OpenRow();
+		$grid->TD('Creation Options:', 'class="text-right"');
+		$str = '';
+		foreach ($tmp as $k => $v) {
+			$str .= xssafe($k.' = '.$v).'<br />';
+		}
+		$grid->TD($str);
+		$grid->CloseRow();
 	}
 }
 

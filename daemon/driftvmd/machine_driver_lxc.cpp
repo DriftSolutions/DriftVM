@@ -8,8 +8,42 @@
 //@AUTOHEADER@END@
 
 #include "driftvmd.h"
+#ifndef WIN32
+#include <sys/sendfile.h>
+#include <sys/mount.h>
+#endif
 
 const string GUID_LXC = "{46634A47-CB89-4318-B98D-A691138C256B}";
+
+bool copy_file(const string& sfn, const string& tfn) {
+#ifdef WIN32
+	return (CopyFile(sfn.c_str(), tfn.c_str(), FALSE) != 0);
+#else
+	int fdi = open(sfn.c_str(), O_RDONLY);
+	if (fdi == -1) {
+		setError("Error opening %s for read: %s", sfn.c_str(), strerror(errno));
+		return false;
+	}
+
+	int fdo = creat(tfn.c_str(), 0750);
+	if (fdo == -1) {
+		setError("Error opening %s for write: %s", tfn.c_str(), strerror(errno));
+		close(fdi);
+		return false;
+	}
+
+	struct stat st = { 0 };
+	fstat(fdi, &st);
+	bool ret = (sendfile(fdo, fdi, NULL, st.st_size) == st.st_size);
+	if (!ret) {
+		setError("Error copying %s to %s: %s", sfn.c_str(), tfn.c_str(), strerror(errno));
+	}
+
+	close(fdo);
+	close(fdi);
+	return ret;
+#endif
+}
 
 class MachineDriverLXC: public MachineDriver {
 public:
@@ -62,6 +96,65 @@ public:
 		fprintf(fp, "lxc.net.0.ipv4.address = %s/%u\n", c->address.c_str(), net->netmask_int);
 		fprintf(fp, "lxc.net.0.ipv4.gateway = auto\n");
 		fclose(fp);
+
+		if (opts.postinst.length()) {
+			if (opts.use_image) {
+				string rootdev = opts.path + c->name + "/rootdev";
+				string mntdir = GetTempDirFile(c->name);
+				if (access(mntdir.c_str(), 0) != 0) {
+					dsl_mkdir(mntdir.c_str(), 0755);
+				}
+
+				stringstream cmd;
+				cmd << "mount -o loop " << escapeshellarg(rootdev) << " " << escapeshellarg(mntdir);
+				printf("Command: %s\n", cmd.str().c_str());
+				int n = system(cmd.str().c_str());
+				if (n != 0) {
+					setError("Error mounting %s to %s: %s", rootdev.c_str(), mntdir.c_str(), strerror(errno));
+					return false;
+				}
+/*
+				n = mount(rootdev.c_str(), mntdir.c_str(), "ext4", 0, "loop");
+				if (n == -1) {
+					setError("Error mounting %s to %s: %s", rootdev.c_str(), mntdir.c_str(), strerror(errno));
+					return false;
+				}
+*/
+
+				string scriptfn = mntdir + "/root/postinst";
+				if (!copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
+#ifndef WIN32
+					umount(mntdir.c_str());
+#endif
+					return false;
+				}
+#ifndef WIN32
+				if (umount(mntdir.c_str()) == -1) {
+					if (umount2(mntdir.c_str(), MNT_DETACH) == -1) {
+						setError("Error unmounting %s from %s: %s", rootdev.c_str(), mntdir.c_str(), strerror(errno));
+						return false;
+					}
+				}
+#endif
+			} else {
+				string scriptfn = opts.path + c->name + "/rootfs/root/postinst";
+				if (!copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
+					return false;
+				}
+			}
+			setError("");
+			c->status = MachineStatus::MS_POST_INST;
+			UpdateMachineStatus(c);
+
+			stringstream cmd;
+			cmd << "lxc-execute -n " << c->name << " -P " << escapeshellarg(opts.path) << " -- sh -c " << escapeshellarg("/root/postinst >/root/postinst.log 2>&1");
+			printf("Command: %s\n", cmd.str().c_str());
+			int n = system(cmd.str().c_str());
+			if (n != 0) {
+				setError("Error running post-install script! (lxc-execute returned %d)", n);
+				return false;
+			}
+		}
 
 		c->status = MachineStatus::MS_STOPPED;
 		return true;
