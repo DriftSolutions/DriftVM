@@ -15,22 +15,7 @@ void network_activate(RPC_Request& req) {
 		req.SetError("device is empty!");
 		return;
 	}
-	DeactivateNetwork(devname);
-	RemoveNetwork(devname);
 	if (ActivateNetwork(devname)) {
-		req.SetReply(true);
-	} else {
-		req.SetError(getError());
-	}
-}
-
-void network_deactivate(RPC_Request& req) {
-	string devname = req.params["device"].get_str();
-	if (devname.length() == 0) {
-		req.SetError("device is empty!");
-		return;
-	}
-	if (DeactivateNetwork(devname)) {
 		req.SetReply(true);
 	} else {
 		req.SetError(getError());
@@ -73,22 +58,13 @@ void network_firewall_flush(RPC_Request& req) {
 	}
 }
 
-void network_delete(RPC_Request& req) {
+void network_destroy(RPC_Request& req) {
 	string devname = req.params["device"].get_str();
 	if (devname.length() == 0) {
 		req.SetError("device is empty!");
 		return;
 	}
-	bool deactivate = true;
-	if (req.params.exists("deactivate")) {
-		deactivate = req.params["deactivate"].get_bool();
-	}
-	bool ret = true;
-	if (deactivate) {
-		ret = DeactivateNetwork(devname);
-	}
-	RemoveNetwork(devname);
-	if (ret) {
+	if (DestroyNetwork(devname, true)) {
 		req.SetReply(true);
 	} else {
 		req.SetError(getError());
@@ -183,8 +159,7 @@ const RPC_Command rpc_driftvm_functions[] = {
 	{ "misc", "getinfo", &getinfo, {}, "Get information about the driftvmd node" },
 
 	{ "network", "network_activate", &network_activate, { { "device", UniValue::VSTR, true } }, "Activate a network" },
-	{ "network", "network_deactivate", &network_deactivate, { { "device", UniValue::VSTR, true } }, "Deactivate a network" },
-	{ "network", "network_delete", &network_delete, { { "device", UniValue::VSTR, true }, { "deactivate", UniValue::VSTR, false } }, "Delete (and optionally deactivate first) a network" },
+	{ "network", "network_destroy", &network_destroy, { { "device", UniValue::VSTR, true } }, "Destroy a network" },
 	{ "network", "network_firewall_apply", &network_firewall_apply, { { "device", UniValue::VSTR, true } }, "Apply firewall rules for a network" },
 	{ "network", "network_firewall_flush", &network_firewall_flush, { { "device", UniValue::VSTR, true } }, "Flush firewall rules for a network" },
 

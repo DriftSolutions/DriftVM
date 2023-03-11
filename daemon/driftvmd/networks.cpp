@@ -17,14 +17,14 @@
 
 networkMap networks;
 
-const char * charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+const char * charset = "abcdefghijklmnopqrstuvwxyz0123456789_";
 
 inline bool _loadFromRow(const SC_Row& row, Network * n) {
 	n->id = atoi(row.Get("ID").c_str());
 	n->device = row.Get("Device");
 	n->address = row.Get("IP");
 	n->setNetmask(atoi(row.Get("Netmask").c_str()));
-	n->type = (NetworkTypes)atoi(row.Get("Type").c_str());
+	n->net_type = (NetworkTypes)atoi(row.Get("Type").c_str());
 	n->iface = row.Get("Interface");
 	if (n->id > 0 && n->device.length() && n->address.length() && n->iface.length() && n->netmask_str.length() && strspn(n->device.c_str(), charset) == n->device.length()) {
 		return true;
@@ -238,14 +238,14 @@ bool ActivateNetwork(shared_ptr<Network>& net) {
 	goto close_end;
 error_end:
 	ret = false;
-	DeactivateNetwork(net);
+	DestroyNetwork(net, false);
 close_end:
 	close(fd);
 	net->status = ret;
 	return ret;
 }
 
-bool DeactivateNetwork(shared_ptr<Network>& net) {
+bool DestroyNetwork(shared_ptr<Network>& net, bool delete_from_db) {
 	AutoMutex(wdMutex);
 
 	if (!set_if_status(net->device.c_str(), false)) {
@@ -266,6 +266,12 @@ bool DeactivateNetwork(shared_ptr<Network>& net) {
 		setError("Error while destroying bridge: %s", strerror(errno));
 		goto error_end;
 	}
+
+	if (delete_from_db && !sql->NoResultQuery(mprintf("DELETE FROM `Networks` WHERE `ID`=%d", net->id))) {
+		setError("Error deleting network from DB: %s", sql->GetErrorString().c_str());
+		goto error_end;
+	}
+
 	goto close_end;
 error_end:
 	ret = false;
@@ -277,7 +283,7 @@ close_end:
 #else
 
 bool ActivateNetwork(shared_ptr<Network>& net) { return true; }
-bool DeactivateNetwork(shared_ptr<Network>& net) { return true; }
+bool DestroyNetwork(shared_ptr<Network>& net, bool delete_from_db) { return true; }
 
 #endif
 
@@ -291,11 +297,11 @@ bool ActivateNetwork(const string& device) {
 	return false;
 }
 
-bool DeactivateNetwork(const string& device) {
+bool DestroyNetwork(const string& device, bool delete_from_db) {
 	AutoMutex(wdMutex);
 	shared_ptr<Network> net;
 	if (GetNetwork(device, net)) {
-		return DeactivateNetwork(net);
+		return DestroyNetwork(net, delete_from_db);
 	}
 	setError("Network with that device not found!");
 	return false;

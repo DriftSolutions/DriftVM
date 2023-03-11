@@ -81,6 +81,12 @@ OpenPanel('Update Network');
 			<div class="form-check">
 			  <input class="form-check-input" type="radio" name="nettype" value="1" id="nettype1"<?php echo iif($type == 1,' checked',''); ?>>
 			  <label class="form-check-label" for="nettype1">
+			    NAT (using MASQUERADE to access anything outside the network, incoming relies on port forwarding)
+			  </label>
+			</div>
+			<div class="form-check">
+			  <input class="form-check-input" type="radio" name="nettype" value="2" id="nettype2"<?php echo iif($type == 2,' checked',''); ?>>
+			  <label class="form-check-label" for="nettype2">
 			    Isolated (can only access other VMs and containers on the same network)
 			  </label>
 			</div>

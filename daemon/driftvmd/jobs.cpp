@@ -94,7 +94,7 @@ void RunJob(const MachineJob& j) {
 			if (GetMachineDriver(c, d)) {
 				if (d->Delete()) {
 					setError("");
-					RemoveMachineFromDB(c->name);
+					RemoveMachineFromDB(c->id);
 					RemoveMachine(c->name);
 				} else {
 					printf("Error deleting machine %s: %s\n", j.name.c_str(), getError().c_str());

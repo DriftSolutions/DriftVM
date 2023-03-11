@@ -193,15 +193,15 @@ bool firewall_add_machine_rules(FirewallState& f, const string& chain, shared_pt
 	while (sql->FetchRow(res, row)) {
 		int intport = atoi(row.Get("InternalPort").c_str());
 		int extport = atoi(row.Get("ExternalPort").c_str());
-		int type = atoi(row.Get("Type").c_str());
-		if (intport >= 1 && intport <= 65535 && extport >= 1 && extport <= 65535 && type >= 0 && type <= 2) {
+		int net_type = atoi(row.Get("Type").c_str());
+		if (intport >= 1 && intport <= 65535 && extport >= 1 && extport <= 65535 && net_type >= 0 && net_type <= 2) {
 			// Enable forwarding outputs for this network
-			if (type == 0 || type == 2) {
+			if (net_type == 0 || net_type == 2) {
 				stringstream cmd;
 				cmd << "-A " << chain << " -p tcp -m tcp --dport " << extport << " -m state --state NEW -j DNAT --to-destination " << c->address << ":" << intport;
 				f.addRule(cmd.str(), "nat");
 			}
-			if (type == 1 || type == 2) {
+			if (net_type == 1 || net_type == 2) {
 				stringstream cmd;
 				cmd << "-A " << chain << " -p udp --dport " << extport << " -j DNAT --to-destination " << c->address << ":" << intport;
 				f.addRule(cmd.str(), "nat");
@@ -250,7 +250,7 @@ bool firewall_add_rules(shared_ptr<Network>& net) {
 		f.addRule(cmd.str(), "nat");
 	}
 
-	if (net->type == NetworkTypes::NT_ROUTED) {
+	if (net->net_type == NetworkTypes::NT_ROUTED || net->net_type == NetworkTypes::NT_NAT) {
 		{
 			// Enable forwarding inputs for this network
 			stringstream cmd;
@@ -262,17 +262,6 @@ bool firewall_add_rules(shared_ptr<Network>& net) {
 			stringstream cmd;
 			cmd << "-A " << chain << " -o " << net->device << " -j ACCEPT";
 			f.addRule(cmd.str());
-		}
-
-		// Add postrouting MASQUERADE for this network
-		f.addCheckOrAdd(GetPostRule(net).c_str(), "nat");
-
-		// Add port forwarding prerouting for this network
-		f.addCheckOrAdd(GetPortForwardingTCPRule(net, chain).c_str(), "nat");
-		f.addCheckOrAdd(GetPortForwardingUDPRule(net, chain).c_str(), "nat");
-
-		if (!firewall_add_machine_rules(f, chain)) {
-			return false;
 		}
 	} else {
 		{
@@ -287,13 +276,28 @@ bool firewall_add_rules(shared_ptr<Network>& net) {
 			cmd << "-A " << chain << " -o " << net->device << " -j DROP";
 			f.addRule(cmd.str());
 		}
+	}
 
-		// Remove postrouting MASQUERADE for this network
-		f.addDeleteIfExists(GetPostRule(net).c_str(), "nat");
+	if (net->net_type == NetworkTypes::NT_ROUTED || net->net_type == NetworkTypes::NT_NAT) {
+		if (!firewall_add_machine_rules(f, chain)) {
+			return false;
+		}
 
+		// Add port forwarding prerouting for this network
+		f.addCheckOrAdd(GetPortForwardingTCPRule(net, chain).c_str(), "nat");
+		f.addCheckOrAdd(GetPortForwardingUDPRule(net, chain).c_str(), "nat");
+	} else {
 		// Delete port forwarding prerouting for this network
 		f.addDeleteIfExists(GetPortForwardingTCPRule(net, chain).c_str(), "nat");
 		f.addDeleteIfExists(GetPortForwardingUDPRule(net, chain).c_str(), "nat");
+	}
+
+	if (net->net_type == NetworkTypes::NT_NAT) {
+		// Add postrouting MASQUERADE for this network
+		f.addCheckOrAdd(GetPostRule(net).c_str(), "nat");
+	} else {
+		// Remove postrouting MASQUERADE for this network
+		f.addDeleteIfExists(GetPostRule(net).c_str(), "nat");
 	}
 
 	return f.apply();

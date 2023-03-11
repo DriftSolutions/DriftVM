@@ -7,7 +7,8 @@ Copyright 2023 Drift Solutions
 
 /* Network Types */
 define('NT_ROUTED', 0);
-define('NT_ISOLATED', 1);
+define('NT_NAT', 1);
+define('NT_ISOLATED', 2);
 
 /* Machine Statuses */
 define('MS_STOPPED', 0);
@@ -49,10 +50,24 @@ function GetMachineStatusString($arr) {
 }
 
 function is_valid_network_type($type) {
-	if ($type < 0 || $type > 1) {
+	if ($type < 0 || $type > 2) {
 		return false;
 	}
 	return true;
+}
+
+function GetNetworkType($type) {
+	$type = my_intval($type);
+	switch ($type) {
+		case NT_ROUTED:
+			return "Routed";
+		case NT_NAT:
+			return "NAT";
+		case NT_ISOLATED:
+			return "Isolated";
+		default:
+			return "Unknown";
+	}
 }
 
 function IsOurNetwork($device) {

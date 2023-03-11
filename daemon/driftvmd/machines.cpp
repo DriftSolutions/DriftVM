@@ -71,7 +71,6 @@ bool GetMachine(const string& devname, shared_ptr<Machine>& net, bool use_cache)
 		if (res != NULL && sql->FetchRow(res, row)) {
 			shared_ptr<Machine> n = make_shared<Machine>();
 			if (_loadFromRow(row, n.get())) {
-				AutoMutex(wdMutex);
 				machines[n->name] = net = n;
 				sql->FreeResult(res);
 				return true;
@@ -209,9 +208,12 @@ bool CreateMachine(shared_ptr<Machine>& c) {
 	c->address = ip;
 	UpdateMachineIP(c);
 
+	wdMutex.Release();
 	if (!d->Create()) {
+		wdMutex.Lock();
 		goto error_end;
 	}
+	wdMutex.Lock();
 
 	setError("");
 	UpdateMachineStatus(c);
@@ -224,8 +226,9 @@ close_end:
 	return ret;
 }
 
-bool RemoveMachineFromDB(const string& name) {
-	return sql->NoResultQuery(mprintf("DELETE FROM `Machines` WHERE `Name`='%s'", sql->EscapeString(name).c_str()));
+bool RemoveMachineFromDB(int id) {
+	sql->NoResultQuery(mprintf("DELETE FROM `PortForwards` WHERE `MachineID`=%d", id));
+	return sql->NoResultQuery(mprintf("DELETE FROM `Machines` WHERE `ID`=%d", id));
 }
 
 void RemoveMachine(const string& name) {

@@ -61,6 +61,7 @@ extern DB_MySQL * sql;
 
 enum class NetworkTypes {
 	NT_ROUTED,
+	NT_NAT,
 	NT_ISOLATED
 };
 
@@ -76,7 +77,7 @@ public:
 	string address;
 	const uint8& netmask_int = _netmask_int;
 	const string& netmask_str = _netmask_str;
-	NetworkTypes type = NetworkTypes::NT_ROUTED;
+	NetworkTypes net_type = NetworkTypes::NT_ROUTED;
 	string iface; // the interface to listen for port forwards on
 
 	void setNetmask(uint8 mask) {
@@ -109,8 +110,8 @@ void RemoveNetworks();
 bool ActivateNetwork(shared_ptr<Network>& net);
 bool ActivateNetwork(const string& device);
 
-bool DeactivateNetwork(shared_ptr<Network>& net);
-bool DeactivateNetwork(const string& device);
+bool DestroyNetwork(shared_ptr<Network>& net, bool delete_from_db);
+bool DestroyNetwork(const string& device, bool delete_from_db);
 
 enum class MachineStatus {
 	MS_STOPPED = 0,
@@ -290,7 +291,7 @@ bool UpdateMachineExtra(shared_ptr<Machine>& c);
 bool GetMachineMAC(shared_ptr<Machine>& c, string& mac);
 bool CreateMachine(shared_ptr<Machine>& c);
 
-bool RemoveMachineFromDB(const string& name);
+bool RemoveMachineFromDB(int id);
 void RemoveMachine(const string& name);
 void RemoveMachines();
 
