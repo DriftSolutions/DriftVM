@@ -51,7 +51,9 @@ if ($sub == 'stop') {
 		$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
 		try {
 			$cli->machine_delete(['name' => $arr['Name']]);
+
 			ShowMsgBox('Success', 'Deleting machine...');
+			$db->query("DELETE FROM `PortForwards` WHERE `MachineID`='".$db->escape($arr['ID'])."'");
 			$arr['Status'] = MS_DELETING;
 		} catch (Exception $e) {
 			ShowMsgBox('Error', 'Error sending command: '.xssafe($e->getMessage()));

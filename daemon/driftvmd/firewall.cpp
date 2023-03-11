@@ -300,9 +300,6 @@ bool firewall_add_rules(shared_ptr<Network>& net) {
 }
 
 bool firewall_flush_rules(shared_ptr<Network>& net) {
-	printf("Flush\n");
-	return false;
-
 	string chain = "DRIFTVM_FWD_" + net->device;
 	std::transform(chain.begin(), chain.end(), chain.begin(), ::toupper);
 
