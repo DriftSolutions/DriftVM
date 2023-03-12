@@ -172,6 +172,19 @@ if (!defined('CORE_INC_PHP')) {
 		}
 		$_SESSION['last_seen'] = time();
 
+		if (!isset($_SESSION['userinfo']) && isset($_COOKIE['dvmkli'])) {
+			$tmp = explode(':', DecryptData($config['login_enc_key'], $_COOKIE['dvmkli']));
+			if (count($tmp) == 2) {
+				$res = $db->query("SELECT * FROM `Users` WHERE ID='".$db->escape(my_intval($tmp[0]))."' AND `Status`>0");
+				if ($arr = $db->fetch_assoc($res)) {
+					$hash = hash('sha256', $arr['Username'].':'.$arr['Email'].':'.$arr['Password']);
+					if ($hash == $tmp[1]) {
+						$_SESSION['userinfo'] = $arr;
+					}
+				}
+			}
+		}
+
 		/* Double-check the user has not been banned or deleted since they logged in and load user options like time zone. */
 		if (isset($_SESSION['userinfo'])) {
 			$res = $db->query("SELECT * FROM `Users` WHERE ID='".$db->escape($_SESSION['userinfo']['ID'])."' AND `Status`>0");
@@ -184,6 +197,13 @@ if (!defined('CORE_INC_PHP')) {
 						if (!date_default_timezone_set($arr['TimeZone'])) {
 							date_default_timezone_set("America/New_York");
 						}
+					}
+
+					if (isset($_SESSION['keep_logged_in']) && $_SESSION['keep_logged_in']) {
+						unset($_SESSION['keep_logged_in']);
+						$secure = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == 'on');
+						$domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+						setcookie('dvmkli', EncryptData($config['login_enc_key'], strval($_SESSION['userinfo']['ID']).':'.hash('sha256', $arr['Username'].':'.$arr['Email'].':'.$arr['Password'])), time() + (86400 * 365), '/', $domain, $secure, true);
 					}
 				} else {
 					/* User has clicked the Log Out button in some session or changed their email or password */

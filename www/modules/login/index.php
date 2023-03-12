@@ -43,19 +43,8 @@ function complete_login($ui) {
 	);
 	$db->insert('LoginHistory', $insert);
 
-/*
-	$tpl = StdEmailReplace(gettemplate("email_login"));
-	if (stristr($tpl, "Invalid Template") === FALSE) {
-		$find = array(
-			'%USER%',
-		);
-		$rep = array(
-			$ui['Username'],
-		);
-		$tpl = str_replace($find, $rep, $tpl);
-		send_email($ui['Email'], 'DriftVM Login Notice', $tpl);
-	}
-*/
+	$_SESSION['keep_logged_in'] = (my_intval(SanitizedRequestStr('kli')) == 1);
+
 	if (!HaveSettings()) {
 		ShowMsgBox("Logged In", std_redirect_reload('auth_settings'));
 	} else if (isset($_SESSION['return'])) {
@@ -96,12 +85,7 @@ $error_msg = "";
 $info_msg = "";
 
 if (isset($_REQUEST['user']) && isset($_REQUEST['pass'])) {
-	$username = GetRequestStr('user');
-	if (is_email($username)) {
-		$username = sanitize_email($username);
-	} else {
-		$username = sanitize($username);
-	}
+	$username = SanitizedRequestStr('user');
 	$pass = TrimTo(GetRequestStr('pass'), 72);
 	if (!empty($username) && !empty($pass)) {
 		if (!csrf_verify('login')) {
@@ -129,21 +113,25 @@ if (isset($_REQUEST['user']) && isset($_REQUEST['pass'])) {
 		if (empty($error_msg)) {
 			$res = $db->query("SELECT COUNT(*) AS `Count` FROM `Users` LIMIT 1");
 			if (($arr = $db->fetch_assoc($res)) !== FALSE && $arr['Count'] == 0) {
-				$insert = array(
-					'Username' => $username,
-					'Status' => 1,
-					'Joined' => time(),
-				);
-				if ($db->insert('Users', $insert) === TRUE && ($id = $db->insert_id()) > 0) {
-					SetPasswordByID($id, $pass);
+				if (strspn($username,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789") == strlen($username)) {
+					$insert = array(
+						'Username' => $username,
+						'Status' => 1,
+						'Joined' => time(),
+					);
+					if ($db->insert('Users', $insert) === TRUE && ($id = $db->insert_id()) > 0) {
+						SetPasswordByID($id, $pass);
+					} else {
+						$error_msg = "Error creating first user!";
+					}
 				} else {
-					$error_msg = "Error creating first user!";
+					$error_msg = "No existing users, but you have invalid characters in your username so we can't create it for you! Allowed characters: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789";
 				}
 			}
 			$db->free_result($res);
 		}
 		if (empty($error_msg)) {
-			$res = $db->query("SELECT * FROM `Users` WHERE (`Username`='".$db->escape($username)."' OR `Email`='".$db->escape($username)."') LIMIT 1");
+			$res = $db->query("SELECT * FROM `Users` WHERE `Username`='".$db->escape($username)."' LIMIT 1");
 			$arr = FALSE;
 			if ($arr = $db->fetch_assoc($res)) {
 				if ($arr['Status'] > 0 && CheckEncryptedPassword($pass, $arr['Password'])) {
@@ -172,14 +160,18 @@ OpenPanel('Log in to your account');
 ?>
 <form action="login" method="POST">
 	<input class="form-control" type="text" placeholder="<?php echo xssafe('Username'); ?>" name="user" value="<?php echo xssafe(SanitizedRequestStr('user')); ?>" required>
-  <input class="form-control" type="password" placeholder="<?php echo xssafe('Password'); ?>" name="pass" required>
+  <input class="form-control mb-3" type="password" placeholder="<?php echo xssafe('Password'); ?>" name="pass" required>
   <?php
   	echo csrf_get_html('login');
   	if (!empty($captcha_html)) {
 			echo $captcha_html;
 		}
   ?>
-  <input type="submit" value="<?php echo 'Login'; ?>" class="btn btn-primary">
+  <input type="submit" value="<?php echo 'Login'; ?>" class="btn btn-primary mb-3">
+  <div class="form-check form-switch">
+	  <input class="form-check-input" type="checkbox" role="switch" value="1" id="kli" name="kli">
+	  <label class="form-check-label" for="kli">Keep me logged in</label>
+	 </div>
 </form>
 <?php
 ClosePanel();

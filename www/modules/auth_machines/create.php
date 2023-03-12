@@ -24,6 +24,8 @@ function is_devname_allowed($str) {
 	return (strspn($str, $charset) == strlen($str));
 }
 
+$bind_def = (!empty(GetSetting('bind_ip')) && !empty(GetSetting('bind_pattern'))) ? my_intval(GetSetting('bind_last_create', '2')) : 0;
+
 if (count($_POST)) {
 	if (csrf_verify('machine-create')) {
 		$devname = SanitizedRequestStr('device');
@@ -42,15 +44,18 @@ if (count($_POST)) {
 							'Type' => $guid,
 							'Network' => $net,
 							'Status' => MS_CREATING,
+							'BindUpdate' => my_clamp(my_intval(SanitizedRequestStr('bind_update', $bind_def)), 0, 2),
 							'CreateOptions' => json_encode($optvals),
 						];
 						if ($db->insert('Machines', $insert) === TRUE) {
+							UpdateSetting('bind_last_create', $insert['BindUpdate']);
 							$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
 							try {
 								$cli->machine_create(['name' => $devname]);
 								ShowMsgBox('Success', 'Machine created!<br /><br />'.std_redirect('auth_machines','action=view&name='.xssafe($devname)));
 								return;
 							} catch (Exception $e) {
+								$db->query("DELETE FROM `Machines` WHERE `Name`='".$db->escape($devname)."'");
 								ShowMsgBox('Error', 'Error creating machine: '.xssafe($e->getMessage()));
 							}
 						} else {
@@ -115,6 +120,22 @@ OpenPanel('Create '.xssafe($d->GetMachineType(false)));
 				</select>
 			</div>
 		</div>
+		<?php if ($bind_def) { ?>
+		<div class="mb-3 row">
+			<label for="bind_update" class="col-sm-2 col-form-label">Bind DNS</label>
+			<div class="col-sm-10">
+				<select class="form-control" id="bind_update" name="bind_update">
+					<?php
+						$sel = my_intval(SanitizedRequestStr('bind_update', $bind_def));
+						print '<option value="0"'.iif($sel == 0,' selected','').'>Disable</option>';
+						print '<option value="1"'.iif($sel == 1,' selected','').'>Machine IP</option>';
+						print '<option value="2"'.iif($sel == 2,' selected','').'>Network Port Forwading Listening IP</option>';
+					?>
+				</select>
+				Register an A record in Bind for this machine.
+			</div>
+		</div>
+		<?php } /* $bind_def */ ?>
 	</div>
 
   <div class="tab-pane fade" id="opts-tab-pane" role="tabpanel" aria-labelledby="opts-tab" tabindex="0">

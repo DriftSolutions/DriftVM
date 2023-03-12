@@ -20,6 +20,7 @@ inline bool _loadFromRow(const SC_Row& row, Machine * n) {
 	n->type = row.Get("Type");
 	n->network = row.Get("Network");
 	n->create_options = row.Get("CreateOptions");
+	n->bind_update = atoi(row.Get("BindUpdate").c_str());
 	string extra = row.Get("Extra");
 	if (extra.length()) {
 		UniValue obj(UniValue::VOBJ);
@@ -55,6 +56,7 @@ bool LoadMachinesFromDB() {
 			machines[n->name] = n;
 		}
 	}
+	sql->FreeResult(res);
 
 	return true;
 }
@@ -217,6 +219,7 @@ bool CreateMachine(shared_ptr<Machine>& c) {
 
 	setError("");
 	UpdateMachineStatus(c);
+	UpdateBindNow();
 	goto close_end;
 error_end:
 	c->status = MachineStatus::MS_ERROR_CREATING;

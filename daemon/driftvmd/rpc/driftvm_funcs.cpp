@@ -126,6 +126,24 @@ void machine_stop(RPC_Request& req) {
 	}
 }
 
+void machine_refresh(RPC_Request& req) {
+	string name = req.params["name"].get_str();
+	if (name.length() == 0) {
+		req.SetError("name is empty!");
+		return;
+	}
+	shared_ptr<Machine> c,old;
+	GetMachine(name, old);
+	if (GetMachine(name, c, false)) {
+		if (old.get() == nullptr || old->bind_update != c->bind_update) {
+			UpdateBindNow();
+		}
+		req.SetReply(true);
+	} else {
+		req.SetError("I could not find that machine!");
+	}
+}
+
 void machine_delete(RPC_Request& req) {
 	string name = req.params["name"].get_str();
 	if (name.length() == 0) {
@@ -167,6 +185,7 @@ const RPC_Command rpc_driftvm_functions[] = {
 	{ "machines", "machine_create", &machine_create, { { "name", UniValue::VSTR, true } }, "Create a new machine" },
 	{ "machines", "machine_start", &machine_start, { { "name", UniValue::VSTR, true } }, "Start a machine" },
 	{ "machines", "machine_stop", &machine_stop, { { "name", UniValue::VSTR, true } }, "Stop a machine" },
+	{ "machines", "machine_refresh", &machine_refresh, { { "name", UniValue::VSTR, true } }, "Make driftvmd reload the machine from the DB instead" },
 	{ "machines", "machine_delete", &machine_delete, { { "name", UniValue::VSTR, true } }, "Delete a machine" },
 };
 

@@ -58,6 +58,7 @@ extern CONFIG config;
 extern DSL_Mutex wdMutex;
 extern DSL_Sockets * socks;
 extern DB_MySQL * sql;
+string GetSetting(const string& name, const string& def = "");
 
 enum class NetworkTypes {
 	NT_ROUTED,
@@ -222,6 +223,7 @@ public:
 	string address;
 	string network;
 	string create_options;
+	uint8 bind_update = 0;
 
 	bool canDelete() {
 		return (status == MachineStatus::MS_STOPPED || status == MachineStatus::MS_ERROR_CREATING);
@@ -242,6 +244,10 @@ public:
 	void getExtra(extraMap& m) {
 		AutoMutex(wdMutex);
 		m = extra;
+	}
+
+	bool isNormalStatus() {
+		return (status == MachineStatus::MS_STOPPED || status == MachineStatus::MS_STARTING || status == MachineStatus::MS_STOPPING || status == MachineStatus::MS_RUNNING);
 	}
 };
 typedef map<string, shared_ptr<Machine>> machineMap;
@@ -301,6 +307,9 @@ void RunJobs();
 
 bool firewall_add_rules(shared_ptr<Network>& net);
 bool firewall_flush_rules(shared_ptr<Network>& net);
+
+void UpdateBindNow();
+void UpdateBind();
 
 void driftvmd_printf(const char * fmt, ...);
 #define printf driftvmd_printf

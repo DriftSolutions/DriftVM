@@ -47,6 +47,7 @@ bool LoadNetworksFromDB() {
 			networks[n->device] = n;
 		}
 	}
+	sql->FreeResult(res);
 
 	return true;
 }
@@ -73,6 +74,34 @@ bool GetNetwork(const string& devname, shared_ptr<Network>& net, bool use_cache)
 		setError("Could not find a network with that name!");
 		return false;
 	}
+}
+
+bool GetNetworkInterface(const string& devname, NetworkInterface & iface) {
+#ifdef WIN32
+	return false;
+#else
+	struct ifaddrs * ifaddr = NULL;
+	if (getifaddrs(&ifaddr) != 0) {
+		return false;
+	}
+
+	bool ret = false;
+	for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL) { continue; }
+		if (ifa->ifa_addr->sa_family != AF_INET) { continue; }
+		if (stricmp(ifa->ifa_name, devname.c_str())) { continue; }
+
+		char host[NI_MAXHOST] = { 0 };
+		if (getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST) != 0) { continue; }
+		iface.device = ifa->ifa_name;
+		iface.ip = host;
+		ret = true;
+		break;
+	}
+
+	freeifaddrs(ifaddr);
+	return ret;
+#endif
 }
 
 bool GetNetworkInterfaces(vector<NetworkInterface>& ifaces) {

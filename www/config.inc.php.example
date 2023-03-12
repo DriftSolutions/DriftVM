@@ -4,6 +4,7 @@ if (!defined('CONFIG_INC_PHP')) {
 
 	$config['site_url'] = "https://your_driftvm_url/";
 	$config['site_fsroot'] = '/path/to/DriftVM/www/';
+	$config['driftvmd_rpc'] = 'http://user:pass@127.0.0.1:28401/'; // URL to your driftvmd daemon
 
 	$config['db_host'] = "localhost";
 	$config['db_port'] = 3306;
@@ -18,7 +19,9 @@ if (!defined('CONFIG_INC_PHP')) {
 	$config['hcaptcha_sitekey'] = '';
 
 	/* Don't change any of these keys after you have set them !!! Use a good randomly generated string 32+ characters long for these. */
+	$config['encrypt_data_hmac_secret'] = '';
 	$config['pass_enc_key'] = '';
+	$config['login_enc_key'] = '';
 
 	$config['Debug'] = false;
 

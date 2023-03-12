@@ -25,3 +25,4 @@ public:
 /* These are the machine's interfaces, not DriftVM interfaces */
 bool GetNetworkInterfaces(vector<NetworkInterface>& ifaces);
 bool GetNetworkInterfaces(set<string>& ifaces);
+bool GetNetworkInterface(const string& devname, NetworkInterface& iface);

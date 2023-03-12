@@ -101,6 +101,24 @@ if ($sub == 'stop') {
 			ShowMsgBox('Success', 'Port forward deleted!');
 		}
 	}
+} else if ($sub == 'set_bind') {
+	$state = my_clamp(my_intval(SanitizedRequestStr('state')), 0, 2);
+	$update = [
+		'ID' => $arr['ID'],
+		'BindUpdate' => $state,
+	];
+	if ($db->update('Machines', $update) === TRUE) {
+		$arr['BindUpdate'] = $state;
+		ShowMsgBox('Success', 'Bind setting updated!');
+		$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+		try {
+			$cli->machine_refresh(['name' => $arr['Name']]);
+		} catch (Exception $e) {
+			ShowMsgBox('Error', 'However, there was an error notifying driftvmd of the change: '.xssafe($e->getMessage()));
+		}
+	} else {
+		ShowMsgBox('Error', 'Error updating Bind setting!');
+	}
 }
 
 print '<div class="container">';
@@ -176,6 +194,16 @@ if ($arr['Status'] == MS_RUNNING) {
 } elseif ($arr['Status'] == MS_STOPPED) {
 	$str .= ' <a type="button" class="btn btn-success" href="machine-view?name='.xssafe($arr['Name']).'&sub=start">Start</a>';
 }
+$str .= ' <div class="dropdown d-inline-block">
+  <a class="btn btn-primary dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Bind DNS
+  </a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item'.iif($arr['BindUpdate'] == 0, ' active','').'" href="machine-view?name='.xssafe($arr['Name']).'&sub=set_bind&state=0">Disable</a></li>
+    <li><a class="dropdown-item'.iif($arr['BindUpdate'] == 1, ' active','').'" href="machine-view?name='.xssafe($arr['Name']).'&sub=set_bind&state=1">Machine IP</a></li>
+    <li><a class="dropdown-item'.iif($arr['BindUpdate'] == 2, ' active','').'" href="machine-view?name='.xssafe($arr['Name']).'&sub=set_bind&state=2">Network PF Listen Port</a></li>
+  </ul>
+</div>';
 if ($arr['Status'] == MS_STOPPED || $arr['Status'] == MS_ERROR_CREATING) {
 	$str .= ' <a type="button" class="btn btn-danger" href="machine-view?name='.xssafe($arr['Name']).'&sub=delete" onClick="return confirm(\'Are you sure?\');">Delete</a>';
 }
@@ -200,7 +228,7 @@ ClosePanel();
 print '</div>';//container
 
 $net = GetNetwork($arr['Network']);
-if ($net !== FALSE && $net['Type'] == NT_ROUTED) {
+if ($net !== FALSE && ($net['Type'] == NT_ROUTED || $net['Type'] == NT_NAT)) {
 	print '<div class="container mt-3">';
 	OpenPanel('Port Forwards'.'<a type="button" class="btn btn-sm btn-success float-end" href="network-view?dev='.xssafe($arr['Network']).'&sub=firewall_apply">Apply Changes</a>');
 

@@ -210,6 +210,7 @@ bool firewall_add_machine_rules(FirewallState& f, const string& chain, shared_pt
 			printf("Invalid port forwarding rule with ID %s for machine %s\n", row.Get("ID").c_str(), c->name.c_str());
 		}
 	}
+	sql->FreeResult(res);
 
 	return true;
 }

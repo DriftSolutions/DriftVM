@@ -21,6 +21,21 @@ DSL_Mutex wdMutex;
 DSL_Sockets * socks = NULL;
 DB_MySQL * sql = NULL;
 
+string GetSetting(const string& name, const string& def) {
+	MYSQL_RES * res = sql->Query(mprintf("SELECT * FROM `Settings` WHERE `Name`='%s'", name.c_str()));
+	if (res == NULL) {
+		return def;
+	}
+
+	string ret = def;
+	SC_Row row;
+	while (sql->FetchRow(res, row)) {
+		ret = row.Get("Value", def);
+	}
+	sql->FreeResult(res);
+	return ret;
+}
+
 bool LoadConfig() {
 	memset(&config, 0, sizeof(config));
 
@@ -243,6 +258,7 @@ int main(int argc, const char * argv[]) {
 			lastUpdate = time(NULL);
 		}
 		RunJobs();
+		UpdateBind();
 		safe_sleep(1);
 	}
 
