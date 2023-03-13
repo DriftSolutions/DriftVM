@@ -4,7 +4,7 @@ Virtual Machine Manager for LXC/KVM
 ## Installation
 These directions were made on Debian 11 but should work for Ubuntu as well. Other distros you will have to figure out on your own. You are expected to know the basics of running a Linux server before using DriftVM, such as configuring a database and user in MariaDB and setting up your vhost in Apache.
 
-#### Dependencies
+### Dependencies
 
 There are certain dependencies you will need for DriftVM:
 
@@ -18,20 +18,20 @@ If you want to use KVM:
 
 apt install qemu-system libvirt-daemon-system virtinst libosinfo-bin osinfo-db
 
-#### Installation
+### Installation
 
-##### Code and database
+#### Code and database
 
 - Clone the DriftVM repo to your location of choice: git clone https://github.com/DriftSolutions/DriftVM
 - Create a database in MariaDB/MySQL and add a user with access to it.
 - Import driftvm.sql into it to create the tables.
 
-##### Set up web admin panel
+#### Set up web admin panel
 
 - Create your vhost of choice in Apache pointing to the www folder. Make sure PHP is enabled in your Apache config and obviously SSL is preferred.
 - In the www folder rename config.inc.php.example to config.inc.php and fill in the configuration fields.
 
-##### Set up the driftvmd daemon
+#### Set up the driftvmd daemon
 
 - In the daemon folder, make a new directtory called 'build' and cd to it.
 - Run: cmake ..
@@ -41,7 +41,7 @@ apt install qemu-system libvirt-daemon-system virtinst libosinfo-bin osinfo-db
 - Run: ./driftvmd
 - You'll want to make driftvmd run at startup and/or have a cron job run it.
 
-##### Log in to the web admin panel
+#### Log in to the web admin panel
 
 - Point your browser to your DriftVM vhost, on your first login it will create your user for you automatically.
 - You are good to go :)
