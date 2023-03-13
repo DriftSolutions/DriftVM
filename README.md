@@ -1,5 +1,6 @@
 # DriftVM
-Virtual Machine Manager for LXC/KVM
+Lightweight Virtual Machine Manager for LXC/KVM<br />
+I made this versus using Proxmox because I like to run my LXC containers in one big shared FS instead in LVM/disk images/etc. so I don't have to worry about growing/shrinking them. Proxmox has no way to do this (as far as I could tell) so I put this together for my own use but figured I would share. Although it does support using disk images for LXC if you like and of course for KVM.
 
 ## Installation
 These directions were made on Debian 11 but should work for Ubuntu as well. Other distros you will have to figure out on your own. You are expected to know the basics of running a Linux server before using DriftVM, such as configuring a database and user in MariaDB and setting up your vhost in Apache.
@@ -45,3 +46,13 @@ apt install qemu-system libvirt-daemon-system virtinst libosinfo-bin osinfo-db
 
 - Point your browser to your DriftVM vhost, on your first login it will create your user for you automatically.
 - You are good to go :)
+
+### Credits
+
+This project uses our Drift Standard Libraries (DSL), mainly 3-clause BSD, license info at https://www.driftsolutions.dev/wiki/Drift_Standard_Libraries
+
+We do use a few 3rd party libraries/code:
+
+libevent, 3-clause BSD, https://libevent.org/LICENSE.txt <br />
+UniValue, MIT license, daemon/univalue/COPYING<br />
+Base64 Encoding/Decoding, Public Domain
