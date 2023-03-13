@@ -23,7 +23,7 @@ apt install qemu-system libvirt-daemon-system virtinst libosinfo-bin osinfo-db
 ##### Code and database
 
 - Clone the DriftVM repo to your location of choice: git clone https://github.com/DriftSolutions/DriftVM
-- Create a database in MariaDB/MySQL and add user user with access to it.
+- Create a database in MariaDB/MySQL and add a user with access to it.
 - Import driftvm.sql into it to create the tables.
 
 ##### Set up web admin panel
