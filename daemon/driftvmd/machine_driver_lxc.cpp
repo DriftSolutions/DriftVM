@@ -15,7 +15,7 @@
 
 const string GUID_LXC = "{46634A47-CB89-4318-B98D-A691138C256B}";
 
-bool copy_file(const string& sfn, const string& tfn) {
+bool driftvm_copy_file(const string& sfn, const string& tfn) {
 #ifdef WIN32
 	return (CopyFile(sfn.c_str(), tfn.c_str(), FALSE) != 0);
 #else
@@ -122,7 +122,7 @@ public:
 */
 
 				string scriptfn = mntdir + "/root/postinst";
-				if (!copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
+				if (!driftvm_copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
 #ifndef WIN32
 					umount(mntdir.c_str());
 #endif
@@ -138,7 +138,7 @@ public:
 #endif
 			} else {
 				string scriptfn = opts.path + c->name + "/rootfs/root/postinst";
-				if (!copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
+				if (!driftvm_copy_file(opts.postinst.c_str(), scriptfn.c_str())) {
 					return false;
 				}
 			}

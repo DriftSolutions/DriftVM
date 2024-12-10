@@ -193,15 +193,15 @@ bool firewall_add_machine_rules(FirewallState& f, const string& chain, shared_pt
 	while (sql->FetchRow(res, row)) {
 		int intport = atoi(row.Get("InternalPort").c_str());
 		int extport = atoi(row.Get("ExternalPort").c_str());
-		int net_type = atoi(row.Get("Type").c_str());
-		if (intport >= 1 && intport <= 65535 && extport >= 1 && extport <= 65535 && net_type >= 0 && net_type <= 2) {
+		int protocol = atoi(row.Get("Type").c_str());
+		if (intport >= 1 && intport <= 65535 && extport >= 1 && extport <= 65535 && protocol >= 0 && protocol <= 2) {
 			// Enable forwarding outputs for this network
-			if (net_type == 0 || net_type == 2) {
+			if (protocol == 0 || protocol == 2) {
 				stringstream cmd;
 				cmd << "-A " << chain << " -p tcp -m tcp --dport " << extport << " -m state --state NEW -j DNAT --to-destination " << c->address << ":" << intport;
 				f.addRule(cmd.str(), "nat");
 			}
-			if (net_type == 1 || net_type == 2) {
+			if (protocol == 1 || protocol == 2) {
 				stringstream cmd;
 				cmd << "-A " << chain << " -p udp --dport " << extport << " -j DNAT --to-destination " << c->address << ":" << intport;
 				f.addRule(cmd.str(), "nat");

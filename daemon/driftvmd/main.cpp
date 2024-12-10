@@ -43,58 +43,58 @@ bool LoadConfig() {
 	sstrcpy(config.rpc.bind_ip, "127.0.0.1");
 	config.rpc.port = 28401;
 
-	Universal_Config2 cfg;
-	if (!cfg.LoadConfigFromFile("driftvmd.conf")) {
+	ConfigSection cfg;
+	if (!cfg.LoadFromFile("driftvmd.conf")) {
 		printf("Error loading driftvmd.conf!\n");
 		return false;
 	}
 
-	ConfigSection * sec = cfg.GetSection(NULL, "Main");
+	ConfigSection * sec = cfg.GetSection("Main");
 	if (sec != NULL) {
-		if (cfg.SectionHasValue(sec, "TmpDir")) {
-			sstrcpy(config.tmp_dir, cfg.GetSectionValue(sec, "TmpDir").AsString().c_str());
+		if (sec->HasValue("TmpDir")) {
+			sstrcpy(config.tmp_dir, sec->GetValue("TmpDir")->AsString().c_str());
 			if (config.tmp_dir[strlen(config.tmp_dir) - 1] == PATH_SEP) {
 				config.tmp_dir[strlen(config.tmp_dir) - 1] = 0;
 			}
 		}
 #if !defined(WIN32)
-		if (cfg.SectionHasValue(sec, "Daemon")) {
-			config.fFork = cfg.GetSectionValue(sec, "Daemon").AsBool();
+		if (sec->HasValue("Daemon")) {
+			config.fFork = sec->GetValue("Daemon")->AsBool();
 		}
 #endif
 	}
 
-	sec = cfg.GetSection(NULL, "RPC");
+	sec = cfg.GetSection("RPC");
 	if (sec != NULL) {
-		if (cfg.SectionHasValue(sec, "Port")) {
-			ConfigValue val = cfg.GetSectionValue(sec, "Port");
-			if (val.AsInt() > 0 && val.AsInt() < 65536) {
-				config.rpc.port = (uint16)val.AsInt();
+		if (sec->HasValue("Port")) {
+			const ConfigValue * val = sec->GetValue("Port");
+			if (val->AsInt() > 0 && val->AsInt() < 65536) {
+				config.rpc.port = (uint16)val->AsInt();
 			}
 		}
-		if (cfg.SectionHasValue(sec, "Threads")) {
-			ConfigValue val = cfg.GetSectionValue(sec, "Threads");
-			if (val.AsInt() >= 0 && val.AsInt() <= 32) {
-				config.rpc.threads = (uint16)val.AsInt();
+		if (sec->HasValue("Threads")) {
+			const ConfigValue * val = sec->GetValue("Threads");
+			if (val->AsInt() >= 0 && val->AsInt() <= 32) {
+				config.rpc.threads = (uint16)val->AsInt();
 			}
 		}
-		if (cfg.SectionHasValue(sec, "BindIP")) {
-			sstrcpy(config.rpc.bind_ip, cfg.GetSectionValue(sec, "BindIP").AsString().c_str());
+		if (sec->HasValue("BindIP")) {
+			sstrcpy(config.rpc.bind_ip, sec->GetValue("BindIP")->AsString().c_str());
 		}
-		sstrcpy(config.rpc.user, cfg.GetSectionValue(sec, "User").AsString().c_str());
-		sstrcpy(config.rpc.pass, cfg.GetSectionValue(sec, "Pass").AsString().c_str());
+		sstrcpy(config.rpc.user, sec->GetValue("User")->AsString().c_str());
+		sstrcpy(config.rpc.pass, sec->GetValue("Pass")->AsString().c_str());
 	}
 
-	sec = cfg.GetSection(NULL, "Database");
+	sec = cfg.GetSection("Database");
 	if (sec != NULL) {
-		sstrcpy(config.db.host, cfg.GetSectionValue(sec, "Host").AsString().c_str());
-		sstrcpy(config.db.user, cfg.GetSectionValue(sec, "User").AsString().c_str());
-		sstrcpy(config.db.pass, cfg.GetSectionValue(sec, "Pass").AsString().c_str());
-		sstrcpy(config.db.dbname, cfg.GetSectionValue(sec, "Database").AsString().c_str());
-		if (cfg.SectionHasValue(sec, "Port")) {
-			ConfigValue val = cfg.GetSectionValue(sec, "Port");
-			if (val.AsInt() > 0 && val.AsInt() < 65536) {
-				config.db.port = (uint16)val.AsInt();
+		sstrcpy(config.db.host, sec->GetValue("Host")->AsString().c_str());
+		sstrcpy(config.db.user, sec->GetValue("User")->AsString().c_str());
+		sstrcpy(config.db.pass, sec->GetValue("Pass")->AsString().c_str());
+		sstrcpy(config.db.dbname, sec->GetValue("Database")->AsString().c_str());
+		if (sec->HasValue("Port")) {
+			const ConfigValue * val = sec->GetValue("Port");
+			if (val->AsInt() > 0 && val->AsInt() < 65536) {
+				config.db.port = (uint16)val->AsInt();
 			}
 		}
 	}

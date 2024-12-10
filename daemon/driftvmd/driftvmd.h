@@ -63,7 +63,8 @@ string GetSetting(const string& name, const string& def = "");
 enum class NetworkTypes {
 	NT_ROUTED,
 	NT_NAT,
-	NT_ISOLATED
+	NT_ISOLATED,
+	NT_NUM_NETWORK_TYPES
 };
 
 class Network {

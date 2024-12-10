@@ -38,6 +38,7 @@ int GetNumCPUs() {
 #endif
 }
 
+/*
 string escapeshellarg(const string& str) {
     size_t len = str.length();
     const char * p = str.c_str();
@@ -51,3 +52,4 @@ string escapeshellarg(const string& str) {
 	ret += "'";
     return ret;
 }
+*/
