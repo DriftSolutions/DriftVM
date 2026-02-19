@@ -25,9 +25,9 @@ $grid->OpenBody();
 $devices = array();
 $net = SanitizedRequestStr('net');
 if (!empty($net)) {
-	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines` WHERE `Network`='".$db->escape($net)."'");
+	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines` WHERE `Network`='".$db->escape($net)."' ORDER BY `Name`");
 } else {
-	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines`");
+	$res = $db->query("SELECT `Name`,`IP`,`Status` FROM `Machines` ORDER BY `Name`");
 }
 while ($arr = $db->fetch_assoc($res)) {
 	$grid->OpenRow();

@@ -18,12 +18,6 @@ if ($d === FALSE) {
 }
 $opts = $d->GetCreateOptions();
 
-$charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
-function is_devname_allowed($str) {
-	global $charset;
-	return (strspn($str, $charset) == strlen($str));
-}
-
 $bind_def = (!empty(GetSetting('bind_ip')) && !empty(GetSetting('bind_pattern'))) ? my_intval(GetSetting('bind_last_create', '2')) : 0;
 
 if (count($_POST)) {

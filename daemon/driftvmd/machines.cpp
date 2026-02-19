@@ -35,6 +35,20 @@ inline bool _loadFromRow(const SC_Row& row, Machine * n) {
 		}
 	}
 	n->status = (MachineStatus)atoi(row.Get("Status").c_str());
+
+	n->extra_hostnames.clear();
+	MYSQL_RES* res = sql->Query(mprintf("SELECT * FROM `ExtraHostnames` WHERE `MachineID`='%d'", n->id));
+	SC_Row row2;
+	if (res != NULL) {
+		while (sql->FetchRow(res, row2)) {
+			string host = row.Get("Hostname");
+			if (!host.empty() && strspn(host.c_str(), charset) == host.length()) {
+				n->extra_hostnames.insert(host);
+			}
+		}
+	}
+	sql->FreeResult(res);
+
 	if (n->id > 0 && n->name.length() && n->type.length() && n->network.length() && strspn(n->name.c_str(), charset) == n->name.length()) {
 		return true;
 	}

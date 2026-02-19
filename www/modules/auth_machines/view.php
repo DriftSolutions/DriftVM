@@ -80,7 +80,7 @@ if ($sub == 'stop') {
 					if ($db->insert('PortForwards', $insert) === TRUE) {
 						ShowMsgBox('Success', 'Port forward added!');
 					} else {
-						ShowMsgBox('Error', 'Error creating network! (Is the device name already in use?)');
+						ShowMsgBox('Error', 'Error adding port forward (does one already exist on this port?)');
 					}
 				} else {
 					ShowMsgBox('Error', 'Invalid protocol type!');
@@ -118,6 +118,44 @@ if ($sub == 'stop') {
 		}
 	} else {
 		ShowMsgBox('Error', 'Error updating Bind setting!');
+	}
+} else if ($sub == 'add_hostname') {
+	if (csrf_verify('machine-view-addhostname')) {
+		$host = SanitizedRequestStr('host');
+		if (!empty($host) && is_devname_allowed($host)) {
+			$insert = [
+				'MachineID' => $arr['ID'],
+				'Hostname' => $host,
+			];
+			if ($db->insert('ExtraHostnames', $insert) === TRUE) {
+				ShowMsgBox('Success', 'Extra hostname added!');
+				$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+				try {
+					$cli->machine_refresh(['name' => $arr['Name']]);
+				} catch (Exception $e) {
+					ShowMsgBox('Error', 'However, there was an error notifying driftvmd of the change: '.xssafe($e->getMessage()));
+				}
+			} else {
+				ShowMsgBox('Error', 'Error adding hostname! (does it already exist?)');
+			}
+		} else {
+			ShowMsgBox('Error', 'Invalid hostname!');
+		}
+	} else {
+		ShowMsgBox('Error', 'CSRF check failed! Please try again...');
+	}
+} else if ($sub == 'del_hostname') {
+	$id = my_intval(SanitizedRequestStr('id'));
+	if ($id > 0) {
+		if ($db->query("DELETE FROM `ExtraHostnames` WHERE `ID`='".$db->escape($id)."'") === TRUE) {
+			ShowMsgBox('Success', 'Extra hostname deleted!');
+			$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
+			try {
+				$cli->machine_refresh(['name' => $arr['Name']]);
+			} catch (Exception $e) {
+				ShowMsgBox('Error', 'However, there was an error notifying driftvmd of the change: '.xssafe($e->getMessage()));
+			}
+		}
 	}
 }
 
@@ -289,6 +327,46 @@ if ($net !== FALSE && ($net['Type'] == NT_ROUTED || $net['Type'] == NT_NAT)) {
 	$str .= '</select>';
 	$grid->TD($str, 'class="text-center"');
 	$grid->TD('<input type="text" class="form-control" name="comment" value="'.xssafe(SanitizedRequestStr('comment')).'">', 'class="text-center"');
+	$grid->TD('<button type="submit" class="btn btn-primary">Add</button>', 'class="text-center"');
+	$grid->CloseRow();
+	print '</form>';
+
+	$grid->CloseBody();
+	$grid->Close();
+
+	ClosePanel();
+	print '</div>';//container
+
+	print '<div class="container mt-3">';
+	OpenPanel('Extra Hostnames');
+
+	$grid->Open();
+
+	$grid->OpenHead();
+	$grid->OpenRow();
+	$grid->Header('Hostname');
+	$grid->Header('Actions');
+	$grid->CloseRow();
+	$grid->CloseHead();
+
+	$grid->OpenBody();
+
+	$res = $db->query("SELECT * FROM `ExtraHostnames` WHERE `MachineID`='".$db->escape($arr['ID'])."' ORDER BY `Hostname` ASC");
+	while ($port = $db->fetch_assoc($res)) {
+		$grid->OpenRow();
+		$grid->TD(xssafe($port['Hostname']), 'class="text-center"');
+		$str = '<a type="button" class="btn btn-danger" href="machine-view?name='.xssafe($arr['Name']).'&sub=del_hostname&id='.xssafe($port['ID']).'">Delete</a>';
+		$grid->TD($str, 'class="text-center"');
+		$grid->CloseRow();
+	}
+	$db->free_result($res);
+
+	print '<form action="machine-view" method="POST">';
+	print '<input type="hidden" name="name" value="'.xssafe($arr['Name']).'">';
+	print '<input type="hidden" name="sub" value="add_hostname">';
+	print csrf_get_html('machine-view-addhostname');
+	$grid->OpenRow();
+	$grid->TD('<input type="text" class="form-control" name="host" value="'.xssafe(SanitizedRequestStr('host')).'">', 'class="text-center"');
 	$grid->TD('<button type="submit" class="btn btn-primary">Add</button>', 'class="text-center"');
 	$grid->CloseRow();
 	print '</form>';

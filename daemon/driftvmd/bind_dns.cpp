@@ -34,15 +34,19 @@ void UpdateBind() {
 	wdMutex.Lock();
 	for (auto& c : machines) {
 		if (c.second->isNormalStatus()) {
-			if (c.second->bind_update > 0) {
-				string h = str_replace(pattern, "%name%", c.second->name);
+			set<string> hostnames = c.second->extra_hostnames;
+			hostnames.insert(c.second->name);
+
+			if (c.second->bind_update > 0) {				
 				if (c.second->bind_update == 2) {
 					// Use network port forwarding listening IP
 					shared_ptr<Network> net;
 					if (GetNetwork(c.second->network, net)) {			
 						NetworkInterface iface;
 						if (GetNetworkInterface(net->iface, iface)) {
-							add[h] = iface.ip;
+							for (auto& h : hostnames) {
+								add[str_replace(pattern, "%name%", h)] = iface.ip;
+							}
 						} else {
 							printf("Could not get listening interface for %s for Bind DNS for machine %s, skipping...\n", c.second->network.c_str(), c.second->name.c_str());
 						}
@@ -51,10 +55,14 @@ void UpdateBind() {
 					}
 				} else {
 					// Use Machine  IP
-					add[h] = c.second->address;
+					for (auto& h : hostnames) {
+						add[str_replace(pattern, "%name%", h)] = c.second->address;
+					}
 				}
 			} else {
-				del.push_back(str_replace(pattern, "%name%", c.second->name));
+				for (auto& h : hostnames) {
+					del.push_back(str_replace(pattern, "%name%", h));
+				}
 			}
 		}
 	}
@@ -81,7 +89,7 @@ void UpdateBind() {
 	fclose(fp);
 
 	stringstream cmd;
-	cmd << "nsupdate " << escapeshellarg(fn);
+	cmd << "nsupdate -k nsupdate.key " << escapeshellarg(fn);
 	int n = system(cmd.str().c_str());
 	if (n == 0) {
 #ifndef DEBUG

@@ -225,6 +225,7 @@ public:
 	string network;
 	string create_options;
 	uint8 bind_update = 0;
+	set<string> extra_hostnames;
 
 	bool canDelete() {
 		return (status == MachineStatus::MS_STOPPED || status == MachineStatus::MS_ERROR_CREATING);

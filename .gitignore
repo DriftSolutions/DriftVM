@@ -6,3 +6,4 @@ Release
 Output
 *.sln
 *.vcxproj*
+*.swp

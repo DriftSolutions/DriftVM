@@ -5,6 +5,11 @@ License: GPLv3
 Copyright 2023 Drift Solutions
 */
 
+function is_devname_allowed($str) {
+	static $charset = 'abcdefghijklmnopqrstuvwxyz0123456789';
+	return (strspn($str, $charset) == strlen($str));
+}
+
 $action = SanitizedRequestStr('action');
 if ($action == 'vnc') {
 	$name = SanitizedRequestStr('name');

@@ -75,7 +75,7 @@ public:
 		}
 		*/
 
-		string pass = getRandomPassword(16);
+		string pass = getRandomPassword(8);
 
 		stringstream cmd;
 		//--virt-type kvm

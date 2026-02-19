@@ -203,6 +203,10 @@ if (!defined('CORE_INC_PHP')) {
 						unset($_SESSION['keep_logged_in']);
 						$secure = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == 'on');
 						$domain = ($_SERVER['HTTP_HOST'] != 'localhost') ? $_SERVER['HTTP_HOST'] : false;
+						$n = strpos($domain, ':');
+						if ($n !== FALSE) {
+							$domain = substr($domain, 0, $n);
+						}
 						setcookie('dvmkli', EncryptData($config['login_enc_key'], strval($_SESSION['userinfo']['ID']).':'.hash('sha256', $arr['Username'].':'.$arr['Email'].':'.$arr['Password'])), time() + (86400 * 365), '/', $domain, $secure, true);
 					}
 				} else {
