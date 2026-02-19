@@ -135,7 +135,7 @@ void machine_refresh(RPC_Request& req) {
 	shared_ptr<Machine> c,old;
 	GetMachine(name, old);
 	if (GetMachine(name, c, false)) {
-		if (old.get() == nullptr || old->bind_update != c->bind_update) {
+		if (old.get() == nullptr || old->bind_update != c->bind_update || req.params.exists("force_bind")) {
 			UpdateBindNow();
 		}
 		req.SetReply(true);
@@ -185,7 +185,7 @@ const RPC_Command rpc_driftvm_functions[] = {
 	{ "machines", "machine_create", &machine_create, { { "name", UniValue::VSTR, true } }, "Create a new machine" },
 	{ "machines", "machine_start", &machine_start, { { "name", UniValue::VSTR, true } }, "Start a machine" },
 	{ "machines", "machine_stop", &machine_stop, { { "name", UniValue::VSTR, true } }, "Stop a machine" },
-	{ "machines", "machine_refresh", &machine_refresh, { { "name", UniValue::VSTR, true } }, "Make driftvmd reload the machine from the DB instead" },
+	{ "machines", "machine_refresh", &machine_refresh, { { "name", UniValue::VSTR, true }, { "force_bind", UniValue::VBOOL, false } }, "Make driftvmd reload the machine from the database" },
 	{ "machines", "machine_delete", &machine_delete, { { "name", UniValue::VSTR, true } }, "Delete a machine" },
 };
 

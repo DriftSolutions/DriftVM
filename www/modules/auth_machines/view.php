@@ -131,7 +131,7 @@ if ($sub == 'stop') {
 				ShowMsgBox('Success', 'Extra hostname added!');
 				$cli = new jsonRPCClient($config['driftvmd_rpc'], $config['Debug']);
 				try {
-					$cli->machine_refresh(['name' => $arr['Name']]);
+					$cli->machine_refresh(['name' => $arr['Name'], 'force_bind' => true]);
 				} catch (Exception $e) {
 					ShowMsgBox('Error', 'However, there was an error notifying driftvmd of the change: '.xssafe($e->getMessage()));
 				}

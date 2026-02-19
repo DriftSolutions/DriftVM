@@ -232,7 +232,7 @@ int main(int argc, const char * argv[]) {
 		AutoMutex(wdMutex);
 		printf("Active interfaces:");
 		for (auto& i : ifaces) {
-			printf(" %s", i.c_str());
+			printf(" %s\n", i.c_str());
 		}
 		printf("\n");
 		for (auto& x : networks) {
