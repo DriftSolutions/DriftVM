@@ -29,7 +29,7 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>DriftVM <?php echo DRIFTVM_VERSION; ?></title>
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.2.3/darkly/bootstrap.min.css" integrity="sha512-YRcmztDXzJQCCBk2YUiEAY+r74gu/c9UULMPTeLsAp/Tw5eXiGkYMPC4tc4Kp1jx/V9xjEOCVpBe4r6Lx6n5dA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.8/darkly/bootstrap.min.css" integrity="sha512-+uC0Ar9AG4/j/iF0Ug22TO9D17MAbD94K7J8h17EzXzN3D5kcOpYQdF4OuiLraHSibCVhz4DIcqwsDboRMVStg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 	</head>
 	<body class="h-100">
 		<div class="d-flex flex-column h-100">
@@ -82,12 +82,12 @@ if (strspn($mod,"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_") != strl
 			</div><!-- /flex-row -->
 			<div class="flex-shrink-0 text-bg-dark p-3">
 				<div class="container text-center">
-					Copyright 2023 Drift Solutions. All Rights Reserved.<br />
+					Copyright 2023-<?php echo date('Y'); ?> Drift Solutions. All Rights Reserved.<br />
 					DriftVM is licensed under the <a href="https://github.com/DriftSolutions/DriftVM/blob/main/LICENSE" target="_blank">GNU General Public License v3.0</a> or any later version.
 				</div>
 			</div>
 		</div>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 <?php
 	$url = 'module.php?mod='.xssafe($mod);
 	print '<script type="text/javascript">document.getElementById(\'module\').src = '.json_encode($url).';</script>';
