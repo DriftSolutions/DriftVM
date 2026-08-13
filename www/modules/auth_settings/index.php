@@ -10,7 +10,7 @@ require("header.inc.php");
 // Do some defaults if needed
 if (!HaveSettings()) {
 	UpdateSetting('lxc_paths', '/var/lib/lxc/');
-	UpdateSetting('lxc_templates', 'debian;ubuntu;centos');
+	UpdateSetting('lxc_templates', 'debian;ubuntu;alpine');
 	UpdateSetting('kvm_paths', '/var/lib/kvm/');
 } else {
 	CacheAllSettings();
